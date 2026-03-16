@@ -78,9 +78,9 @@ WSGI_APPLICATION = 'bishe.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bishe6',
+        'NAME': 'bishe7',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': '2003',
         'HOST': 'localhost',
         'PORT': '3306',
     }

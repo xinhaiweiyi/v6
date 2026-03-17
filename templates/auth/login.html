@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}登录 | 在线视频学习系统{% endblock %}
+
+{% block content %}
+<section class="mx-auto flex max-w-[1400px] justify-center px-4 py-10 sm:px-6 lg:px-8">
+    <!-- <div class="grid w-7xl gap-2 place-items-center lg:grid-rows-2">
+        <div class=" space-y-5">
+            <span class="inline-flex rounded-full bg-sky-100 px-4 py-1 text-sm font-medium text-sky-700">邮箱登录</span>
+            <h1 class="text-4xl font-semibold tracking-tight text-slate-900">进入你的专属学习门户</h1>
+            <p class="max-w-xl text-base leading-8 text-slate-600">学生登录后进入学习中心，老师进入建课与评论管理页面，管理员进入审核和数据看板。系统会自动识别角色并跳转。
+            </p>
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+                    <p class="text-sm font-medium text-slate-800">学生端</p>
+                    <p class="mt-2 text-sm text-slate-500">选课、学习、继续学习、评论互动</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+                    <p class="text-sm font-medium text-slate-800">老师端</p>
+                    <p class="mt-2 text-sm text-slate-500">创建课程、上传视频、回复评论</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+                    <p class="text-sm font-medium text-slate-800">管理员端</p>
+                    <p class="mt-2 text-sm text-slate-500">审核课程、管理用户、查看统计图</p>
+                </div>
+            </div>
+        </div> -->
+
+    <div class="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <h2 class="text-2xl font-semibold text-slate-900">欢迎回来</h2>
+        <form method="post" class="mt-6 space-y-5">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">邮箱</span>
+                {{ form.email }}
+                {% for error in form.email.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error
+                        }}</span>{% endfor %}
+            </label>
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">密码</span>
+                {{ form.password }}
+                {% for error in form.password.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error
+                        }}</span>{% endfor %}
+            </label>
+            <button type="submit" class="btn btn-primary h-11 w-full rounded-lg text-white">登录</button>
+        </form>
+        <p class="mt-5 text-sm text-slate-500">还没有账号？<a href="{% url 'accounts:register' %}"
+                class="font-medium text-sky-700">立即注册</a></p>
+    </div>
+
+</section>
+{% endblock %}

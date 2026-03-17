@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="mx-auto grid max-w-[1400px]  gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:px-8">
+    <aside class="space-y-4">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+            <p class="text-sm font-semibold text-slate-900">{% block sidebar_title %}功能导航{% endblock %}</p>
+        </div>
+        <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-soft">
+            <nav class="flex gap-2 lg:block lg:space-y-2">
+                {% block sidebar %}{% endblock %}
+            </nav>
+        </div>
+    </aside>
+    <section class="space-y-6">
+        {% block dashboard_content %}{% endblock %}
+    </section>
+</div>
+{% endblock %}

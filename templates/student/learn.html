@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load portal_tags %}
+
+{% block title %}{{ course.title }} | 学习中{% endblock %}
+
+{% block extra_head %}
+<link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
+<style>
+    .learning-player-shell {
+        position: relative;
+        overflow: hidden;
+        border-radius: 1rem;
+        background: #020617;
+        aspect-ratio: 16 / 9;
+    }
+
+    .learning-player-shell .video-js {
+        width: 100%;
+        height: 100%;
+    }
+
+    .learning-player-shell .vjs-tech,
+    .learning-player-shell .vjs-poster {
+        object-fit: contain;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <p class="text-sm text-sky-700">{{ course.category.name }} · {{ course.teacher.username }}</p>
+            <h1 class="mt-1 text-2xl font-semibold text-slate-900">{{ course.title }}</h1>
+        </div>
+        <a href="{{ back_url }}" class="btn btn-outline rounded-lg border-slate-300">{{ back_label }}</a>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div class="min-w-0 space-y-6">
+            <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-soft">
+                {% if active_lesson %}
+                <div class="learning-player-shell">
+                    <video id="learning-player" class="video-js vjs-big-play-centered h-full w-full" controls
+                        preload="auto" data-setup="{}" data-start-seconds="{{ start_seconds }}"
+                        {% if enrollment %}data-enrollment-id="{{ enrollment.id }}" {% endif %}
+                        data-lesson-id="{{ active_lesson.id }}">
+                        <source src="{{ active_lesson.video.url }}" type="video/mp4">
+                        您的浏览器暂不支持视频播放。
+                    </video>
+                </div>
+                <div class="mt-4">
+                    <h2 class="text-lg font-semibold text-slate-900">{{ active_lesson.title }}</h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        {% if can_track_progress %}
+                        系统会自动记录学习进度，你下次登录后可以继续学习。
+                        {% else %}
+                        当前为预览模式，可直接观看已发布课程的视频内容。
+                        {% endif %}
+                    </p>
+                </div>
+                {% else %}
+                <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-16 text-center text-slate-500">
+                    当前课程还没有可播放的视频。
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="rounded-[24px] border border-slate-200 bg-white p-6 shadow-soft">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-slate-900">评论讨论区</h2>
+                </div>
+                {% if active_lesson and can_comment %}
+                <form id="comment-form" class="mt-5 space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="lesson_id" value="{{ active_lesson.id }}">
+                    <input type="hidden" name="parent_id" id="comment-parent-id">
+                    {{ comment_form.content }}
+                    <div class="flex items-center justify-between">
+                        <span id="reply-tip" class="text-sm text-slate-400">发布主评论</span>
+                        <button type="submit" class="btn btn-primary rounded-lg text-white">发表评论</button>
+                    </div>
+                </form>
+                {% elif active_lesson %}
+                <div class="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">当前账号可观看视频，但没有在此课程下发表评论的权限。
+                </div>
+                {% endif %}
+
+                <div class="mt-6 space-y-4" data-comment-list>
+                    {% for comment in comments %}
+                    <article id="comment-{{ comment.id }}"
+                        class="scroll-mt-24 rounded-2xl border border-slate-200 p-4 target:border-sky-300 target:bg-sky-50">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="flex min-w-0 items-start gap-3">
+                                {% if comment.user.avatar %}
+                                <img src="{{ comment.user.avatar.url }}" alt="{{ comment.user.display_name }}"
+                                    class="h-10 w-10 shrink-0 rounded-full object-cover">
+                                {% else %}
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
+                                    {{ comment.user.display_name|slice:":1" }}
+                                </div>
+                                {% endif %}
+                                <div class="min-w-0">
+                                    <p class="font-medium text-slate-900">{{ comment.user.display_name }}</p>
+                                    <p class="mt-1 text-sm leading-6 text-slate-600">{{ comment.display_content }}</p>
+                                    <p class="mt-2 text-xs text-slate-400">{{ comment.created_at|date:"Y-m-d H:i" }}</p>
+                                </div>
+                            </div>
+                            <div class="flex shrink-0 items-center gap-3">
+                                {% if can_comment and not comment.is_deleted %}
+                                <button type="button" class="text-sm font-medium text-sky-700" data-reply-button
+                                    data-comment-id="{{ comment.id }}">回复</button>
+                                {% endif %}
+                                {% if can_moderate_comments and not comment.is_deleted %}
+                                <button type="button" class="text-sm font-medium text-rose-600" data-delete-comment
+                                    data-comment-id="{{ comment.id }}">删除</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if comment.replies.all %}
+                        <div class="mt-4 space-y-3 border-l border-slate-200 pl-4">
+                            {% for reply in comment.replies.all %}
+                            <div id="comment-{{ reply.id }}"
+                                class="scroll-mt-24 rounded-xl bg-slate-50 p-3 target:ring-2 target:ring-sky-200">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex min-w-0 items-start gap-3">
+                                        {% if reply.user.avatar %}
+                                        <img src="{{ reply.user.avatar.url }}" alt="{{ reply.user.display_name }}"
+                                            class="h-9 w-9 shrink-0 rounded-full object-cover">
+                                        {% else %}
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">
+                                            {{ reply.user.display_name|slice:":1" }}
+                                        </div>
+                                        {% endif %}
+                                        <div class="min-w-0">
+                                            <p class="font-medium text-slate-900">{{ reply.user.display_name }}</p>
+                                            <p class="mt-1 text-sm leading-6 text-slate-600">{{ reply.display_content }}</p>
+                                            <p class="mt-2 text-xs text-slate-400">{{ reply.created_at|date:"Y-m-d H:i" }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {% if can_moderate_comments and not reply.is_deleted %}
+                                    <button type="button" class="shrink-0 text-sm font-medium text-rose-600"
+                                        data-delete-comment data-comment-id="{{ reply.id }}">删除</button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </article>
+                    {% empty %}
+                    <div
+                        class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-slate-500">
+                        还没有评论，来发布第一条讨论吧。
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <aside class="space-y-4">
+            <div class="rounded-[24px] border border-slate-200 bg-white p-5 shadow-soft">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-slate-900">课程目录</h2>
+                    <span class="text-sm text-slate-400">{{ lessons|length }} 节</span>
+                </div>
+                <div class="mt-4 space-y-4">
+                    {% for chapter in course.chapters.all %}
+                    <div class="space-y-2">
+                        <p class="text-sm font-medium text-slate-700">第 {{ forloop.counter }} 章 · {{ chapter.title }}
+                        </p>
+                        {% for lesson in chapter.lessons.all %}
+                        <a href="{% url 'learning:learn-course' course.slug %}?lesson={{ lesson.id }}"
+                            class="block rounded-2xl border px-3 py-3 text-sm transition {% if active_lesson and lesson.id == active_lesson.id %}border-sky-200 bg-sky-50 text-sky-800{% else %}border-slate-200 bg-white text-slate-600 hover:border-slate-300{% endif %}">
+                            <div class="flex items-center justify-between gap-3">
+                                <span>{{ lesson.title }}</span>
+                                <span>{{ lesson.duration_seconds|duration_human }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<script>
+    const playerElement = document.getElementById('learning-player');
+    if (playerElement) {
+        const player = videojs('learning-player');
+        player.ready(() => {
+            const startSeconds = parseFloat(playerElement.dataset.startSeconds || '0');
+            if (startSeconds > 0) player.currentTime(startSeconds);
+        });
+        if (playerElement.dataset.enrollmentId) {
+            let lastSaved = 0;
+            const saveProgress = (completed = false) => window.app.post('{% url "learning:progress" %}', {
+                enrollment_id: playerElement.dataset.enrollmentId,
+                lesson_id: playerElement.dataset.lessonId,
+                seconds: Math.floor(player.currentTime()),
+                completed,
+            });
+            player.on('timeupdate', () => {
+                const current = Math.floor(player.currentTime());
+                if (current - lastSaved >= 15) {
+                    lastSaved = current;
+                    saveProgress(false);
+                }
+            });
+            player.on('pause', () => saveProgress(false));
+            player.on('ended', () => saveProgress(true));
+            window.addEventListener('beforeunload', () => saveProgress(false));
+        }
+    }
+
+    document.querySelectorAll('[data-reply-button]').forEach((button) => {
+        button.addEventListener('click', () => {
+            document.getElementById('comment-parent-id').value = button.dataset.commentId;
+            document.getElementById('reply-tip').textContent = `正在回复评论 #${button.dataset.commentId}`;
+            document.querySelector('#comment-form textarea')?.focus();
+        });
+    });
+
+    document.querySelectorAll('[data-delete-comment]').forEach((button) => {
+        button.addEventListener('click', async () => {
+            const confirmed = window.confirm('确定要删除这条评论吗？删除后评论会从当前列表中消失。');
+            if (!confirmed) return;
+            const response = await window.app.post(`/comments/${button.dataset.commentId}/delete/`, {
+                reason: '老师或管理员从评论区删除评论',
+            }, button);
+            if (response?.ok) {
+                window.app.toast(response.message, 'success');
+                document.getElementById(`comment-${button.dataset.commentId}`)?.remove();
+            }
+        });
+    });
+
+    document.getElementById('comment-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const response = await window.app.post('{% url "comments:create" %}', {
+            lesson_id: form.lesson_id.value,
+            parent_id: form.parent_id.value,
+            content: form.content.value,
+        }, form.querySelector('button[type="submit"]'));
+        if (response?.ok) {
+            window.app.toast(response.message, 'success');
+            window.location.reload();
+        }
+    });
+</script>
+{% endblock %}

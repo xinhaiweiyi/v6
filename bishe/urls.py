@@ -1,22 +1,23 @@
-"""
-URL configuration for bishe project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+
+from portal import views as portal_views
+
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
+    path("", portal_views.home, name="home"),
+    path("portal/", portal_views.role_home, name="role-home"),
+    path("teacher/dashboard/", portal_views.teacher_dashboard, name="teacher-dashboard"),
+    path("", include(("portal.urls", "portal"), namespace="portal")),
+    path("auth/", include(("accounts.urls", "accounts"), namespace="accounts")),
+    path("student/", include(("learning.urls", "learning"), namespace="learning")),
+    path("teacher/", include(("courses.urls", "courses"), namespace="courses")),
+    path("admin-panel/", include(("portal.admin_urls", "admin_panel"), namespace="admin_panel")),
+    path("comments/", include(("learning.comment_urls", "learning"), namespace="comments")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

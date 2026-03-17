@@ -1,11 +1,120 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap");
 @import "tailwindcss";
 @plugin "daisyui";
 
-/**
-  * A catch-all path to Django template files, JavaScript, and Python files
-  * that contain Tailwind CSS classes and will be scanned by Tailwind to generate the final CSS file.
-  *
-  * If your final CSS file is not being updated after code changes, you may want to broaden or narrow
-  * the scope of this path.
-  */
 @source "../../../**/*.{html,py,js}";
+
+@layer base {
+  :root {
+    --color-base-100: #f8fafc;
+    --color-base-200: #f1f5f9;
+    --color-base-300: #e2e8f0;
+    --color-base-content: #0f172a;
+    --color-primary: #0369a1;
+    --color-primary-content: #ffffff;
+    --color-secondary: #0ea5e9;
+    --color-secondary-content: #ffffff;
+    --color-accent: #22c55e;
+    --color-accent-content: #052e16;
+    --color-info: #0ea5e9;
+    --color-info-content: #082f49;
+    --color-success: #22c55e;
+    --color-success-content: #052e16;
+    --color-warning: #f59e0b;
+    --color-warning-content: #78350f;
+    --color-error: #ef4444;
+    --color-error-content: #7f1d1d;
+    --radius-selector: 0.5rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.9rem;
+    --depth: 0;
+    --noise: 0;
+  }
+
+  html {
+    font-family: "Noto Sans SC", sans-serif;
+  }
+
+  body {
+    color: #0f172a;
+    background:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 30%),
+      radial-gradient(circle at top right, rgba(34, 197, 94, 0.06), transparent 28%),
+      #f8fafc;
+  }
+
+  h1,
+  h2,
+  h3,
+  .stat-value {
+    font-family: "Plus Jakarta Sans", "Noto Sans SC", sans-serif;
+  }
+}
+
+@layer components {
+  .nav-link {
+    @apply text-sm font-medium text-slate-600 transition hover:text-slate-900;
+  }
+
+  .shadow-soft {
+    box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.22);
+  }
+
+  .shadow-card {
+    box-shadow: 0 24px 60px -24px rgba(2, 132, 199, 0.2);
+  }
+
+  .dashboard-link {
+    @apply inline-flex w-full items-center rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900;
+  }
+
+  .dashboard-link.is-active {
+    @apply bg-sky-50 text-sky-700;
+  }
+
+  .stat-card {
+    @apply rounded-2xl border border-slate-200 bg-white p-5;
+    box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.22);
+  }
+
+  .stat-label {
+    @apply text-sm text-slate-500;
+  }
+
+  .stat-value {
+    @apply mt-3 text-3xl font-semibold tracking-tight text-slate-900;
+  }
+
+  .chart-card {
+    @apply rounded-2xl border border-slate-200 bg-white p-6;
+    box-shadow: 0 24px 60px -30px rgba(15, 23, 42, 0.22);
+  }
+
+  .badge {
+    @apply rounded-full px-3 py-2 text-xs font-medium;
+  }
+
+  .badge-neutral {
+    @apply bg-slate-100 text-slate-700;
+  }
+
+  .badge-primary {
+    @apply bg-sky-100 text-sky-700;
+  }
+
+  .badge-info {
+    @apply bg-cyan-100 text-cyan-700;
+  }
+
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-700;
+  }
+
+  .badge-warning {
+    @apply bg-amber-100 text-amber-700;
+  }
+
+  .badge-error {
+    @apply bg-rose-100 text-rose-700;
+  }
+}

@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}注册 | 在线视频学习系统{% endblock %}
+
+{% block content %}
+<section class="mx-auto flex max-w-[1400px] justify-center px-4 py-10 sm:px-6 lg:px-8">
+    <div class="w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+        <h2 class="text-2xl font-semibold text-slate-900">创建账号</h2>
+        <form method="post" class="mt-6 space-y-5" id="register-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">身份</span>
+                {{ form.role }}
+                {% for error in form.role.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error }}</span>{% endfor %}
+            </label>
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">用户名</span>
+                {{ form.username }}
+                {% for error in form.username.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error }}</span>{% endfor %}
+            </label>
+            <div class="grid gap-4 sm:grid-cols-[1fr_160px] sm:items-start">
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">邮箱</span>
+                    {{ form.email }}
+                    {% for error in form.email.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error }}</span>{% endfor %}
+                </label>
+                <div class="mt-7 space-y-2 sm:mt-7">
+                    <button
+                        type="button"
+                        id="send-code-button"
+                        data-cooldown-seconds="{{ code_resend_seconds }}"
+                        class="btn btn-outline h-11 w-full rounded-lg border-slate-300"
+                    >
+                        获取验证码
+                    </button>
+                    <p id="send-code-status" class="min-h-5 text-xs text-slate-400"></p>
+                </div>
+            </div>
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">验证码</span>
+                {{ form.code }}
+                {% for error in form.code.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error }}</span>{% endfor %}
+            </label>
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">密码</span>
+                {{ form.password1 }}
+                {% for error in form.password1.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error }}</span>{% endfor %}
+            </label>
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">确认密码</span>
+                {{ form.password2 }}
+                {% for error in form.password2.errors %}<span class="mt-1 block text-sm text-rose-600">{{ error }}</span>{% endfor %}
+            </label>
+            <button type="submit" class="btn btn-primary h-11 w-full rounded-lg text-white">注册并登录</button>
+        </form>
+        <p class="mt-5 text-sm text-slate-500">
+            已有账号？<a href="{% url 'accounts:login' %}" class="font-medium text-sky-700">前往登录</a>
+        </p>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const sendCodeButton = document.getElementById('send-code-button');
+    const sendCodeStatus = document.getElementById('send-code-status');
+    const defaultButtonText = sendCodeButton?.textContent?.trim() || '获取验证码';
+    let cooldownTimer = null;
+
+    const setStatusMessage = (message, type = 'info') => {
+        if (!sendCodeStatus) return;
+        const classMap = {
+            success: 'text-emerald-600',
+            error: 'text-rose-600',
+            info: 'text-slate-400',
+        };
+        sendCodeStatus.className = `min-h-5 text-xs ${classMap[type] || classMap.info}`;
+        sendCodeStatus.textContent = message;
+    };
+
+    const stopCooldown = () => {
+        if (cooldownTimer) {
+            window.clearInterval(cooldownTimer);
+            cooldownTimer = null;
+        }
+    };
+
+    const startCooldown = (seconds) => {
+        if (!sendCodeButton) return;
+        stopCooldown();
+        let remaining = seconds;
+        sendCodeButton.disabled = true;
+        sendCodeButton.textContent = `${remaining}s 后重发`;
+        cooldownTimer = window.setInterval(() => {
+            remaining -= 1;
+            if (remaining <= 0) {
+                stopCooldown();
+                sendCodeButton.disabled = false;
+                sendCodeButton.textContent = defaultButtonText;
+                setStatusMessage('可以重新发送验证码了。');
+                return;
+            }
+            sendCodeButton.textContent = `${remaining}s 后重发`;
+        }, 1000);
+    };
+
+    sendCodeButton?.addEventListener('click', async (event) => {
+        const email = document.getElementById('id_email')?.value?.trim();
+        if (!email) {
+            window.app.toast('请先填写邮箱。', 'error');
+            setStatusMessage('请先填写邮箱。', 'error');
+            return;
+        }
+
+        setStatusMessage('正在发送验证码...');
+        const response = await window.app.post('{% url "accounts:send-code" %}', { email }, event.currentTarget);
+
+        if (response?.message) {
+            window.app.toast(response.message, response.ok ? 'success' : 'error');
+            setStatusMessage(response.message, response.ok ? 'success' : 'error');
+        }
+
+        if (response?.ok) {
+            const cooldownSeconds = Number(sendCodeButton.dataset.cooldownSeconds || '60');
+            startCooldown(cooldownSeconds);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}账号信息 | 在线视频学习系统{% endblock %}
+{% block sidebar_title %}账号中心{% endblock %}
+{% block sidebar_desc %}修改头像、用户名和登录密码。{% endblock %}
+
+{% block sidebar %}
+    <a href="{% url 'accounts:profile' %}" class="dashboard-link is-active">账号信息</a>
+    <a href="{% url 'portal:role-home' %}" class="dashboard-link">返回门户首页</a>
+{% endblock %}
+
+{% block dashboard_content %}
+    <div class="grid gap-6 xl:grid-cols-2">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+            <h1 class="text-xl font-semibold text-slate-900">基础资料</h1>
+            <form method="post" enctype="multipart/form-data" class="mt-5 space-y-5">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="profile">
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">当前头像</span>
+                    {% if request.user.avatar %}
+                        <a href="{{ request.user.avatar.url }}" class="text-sm text-sky-700">查看已上传头像</a>
+                    {% else %}
+                        <span class="text-sm text-slate-400">暂未上传头像</span>
+                    {% endif %}
+                </label>
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">用户名</span>
+                    {{ profile_form.username }}
+                </label>
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">上传头像</span>
+                    {{ profile_form.avatar }}
+                </label>
+                <button type="submit" class="btn btn-primary rounded-lg text-white">保存资料</button>
+            </form>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+            <h2 class="text-xl font-semibold text-slate-900">重置密码</h2>
+            <form method="post" class="mt-5 space-y-5">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="password">
+                {{ password_form.non_field_errors }}
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">原密码</span>
+                    {{ password_form.old_password }}
+                </label>
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">新密码</span>
+                    {{ password_form.new_password1 }}
+                </label>
+                <label class="form-control block">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">确认新密码</span>
+                    {{ password_form.new_password2 }}
+                </label>
+                <button type="submit" class="btn btn-outline rounded-lg border-slate-300">更新密码</button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

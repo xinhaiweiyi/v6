@@ -1,0 +1,64 @@
+{% extends 'base_dashboard.html' %}
+
+{% block title %}分类管理 | 在线视频学习系统{% endblock %}
+{% block sidebar_title %}分类管理{% endblock %}
+{% block sidebar_desc %}管理员可新增或调整课程分类启用状态。{% endblock %}
+
+{% block sidebar %}
+<a href="{% url 'admin_panel:admin-dashboard' %}" class="dashboard-link">数据看板</a>
+<a href="{% url 'admin_panel:courses' %}" class="dashboard-link">课程审核</a>
+<a href="{% url 'admin_panel:users' %}" class="dashboard-link">用户管理</a>
+<a href="{% url 'admin_panel:comments' %}" class="dashboard-link">评论管理</a>
+<a href="{% url 'admin_panel:categories' %}" class="dashboard-link is-active">分类管理</a>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+        <h1 class="text-xl font-semibold text-slate-900">新增分类</h1>
+        <form method="post" class="mt-5 space-y-5">
+            {% csrf_token %}
+            <label class="form-control block">
+                <span class="mb-2 block text-sm font-medium text-slate-700">分类名称</span>
+                {{ form.name }}
+            </label>
+            <label class="flex items-center gap-3 text-sm text-slate-600">
+                {{ form.is_active }}
+                <span>立即启用该分类</span>
+            </label>
+            <button type="submit" class="btn btn-primary rounded-lg text-white">保存分类</button>
+        </form>
+    </div>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+        <h2 class="text-xl font-semibold text-slate-900">现有分类</h2>
+        <div class="mt-5 space-y-4">
+            {% for category in categories %}
+            <form method="post" action="{% url 'admin_panel:category-update' category.id %}"
+                class="grid h-22  gap-2 rounded-2xl border border-slate-200 p-2 lg:grid-cols-[minmax(0,1fr)_100px_240px]">
+                {% csrf_token %}
+                <div class="space-y-2 ">
+                    <input type="text" name="name" value="{{ category.name }}"
+                        class="input input-bordered h-11 w-full rounded-lg border-slate-200 bg-white">
+                    <p class="text-xs text-slate-500">课程数：{{ category.course_total }}</p>
+                </div>
+                <label class="flex items-center gap-3 rounded-lg  px-4">
+                    <input type="checkbox" name="is_active" class="toggle toggle-success"
+                        {% if category.is_active %}checked{% endif %}>
+                </label>
+                <div class="flex gap-3 items-center">
+                    <button type="submit" class="btn btn-outline flex-1 rounded-lg border-slate-300">保存修改</button>
+                    <button type="submit" formmethod="post"
+                        formaction="{% url 'admin_panel:category-delete' category.id %}" formnovalidate
+                        class="btn flex-1 rounded-lg border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100"
+                        onclick="return confirm('确定删除这个分类吗？');">删除</button>
+                </div>
+            </form>
+            {% empty %}
+            <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-slate-500">暂无课程分类。
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

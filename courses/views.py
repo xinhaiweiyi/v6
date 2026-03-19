@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Case, Count, ExpressionWrapper, F, FloatField, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,6 +10,7 @@ from django.views.decorators.http import require_POST
 from bishe.permissions import role_required
 from courses.forms import CategoryForm, ChapterForm, CourseForm, LessonForm
 from courses.models import Category, Chapter, Course, Lesson
+from learning.models import Enrollment
 
 
 def _next_chapter_order(course):
@@ -31,6 +33,16 @@ def _renumber_lessons(chapter):
         if lesson.order != index:
             lesson.order = index
             lesson.save(update_fields=["order", "updated_at"])
+
+
+def _attach_enrollment_progress(enrollments):
+    for enrollment in enrollments:
+        total_lessons = getattr(enrollment, "total_lessons", 0) or 0
+        completed_lessons = getattr(enrollment, "completed_lessons", 0) or 0
+        enrollment.progress_percent = 0 if total_lessons == 0 else int(round(completed_lessons * 100 / total_lessons))
+        enrollment.total_lessons_count = total_lessons
+        enrollment.completed_lessons_count = completed_lessons
+    return enrollments
 
 
 @role_required("teacher")
@@ -221,6 +233,62 @@ def teacher_course_preview(request, course_id):
             "active_lesson": active_lesson,
             "lessons": lessons,
             "preview_base_url": reverse("courses:teacher-course-preview", args=[course.id]),
+        },
+    )
+
+
+@role_required("teacher")
+def teacher_course_progress(request, course_id):
+    course = get_object_or_404(
+        Course.objects.select_related("category"),
+        pk=course_id,
+        teacher=request.user,
+    )
+    ordering = request.GET.get("ordering", "-progress")
+    enrollments = (
+        Enrollment.objects.filter(course=course)
+        .select_related("student", "last_lesson")
+        .annotate(
+            total_lessons=Count("course__chapters__lessons", distinct=True),
+            completed_lessons=Count("progresses", filter=Q(progresses__completed=True), distinct=True),
+        )
+        .annotate(
+            progress_percent_db=Case(
+                When(total_lessons=0, then=Value(0.0)),
+                default=ExpressionWrapper(F("completed_lessons") * 100.0 / F("total_lessons"), output_field=FloatField()),
+                output_field=FloatField(),
+            )
+        )
+    )
+    ordering_map = {
+        "-progress": ["-progress_percent_db", "-last_learned_at", "-joined_at"],
+        "progress": ["progress_percent_db", "joined_at"],
+        "-last_learned_at": ["-last_learned_at", "-joined_at"],
+        "last_learned_at": ["last_learned_at", "joined_at"],
+        "joined_at": ["joined_at"],
+        "-joined_at": ["-joined_at"],
+        "username": ["student__username", "joined_at"],
+        "-username": ["-student__username", "joined_at"],
+    }
+    enrollments = list(enrollments.order_by(*ordering_map.get(ordering, ordering_map["-progress"])))
+    _attach_enrollment_progress(enrollments)
+    return render(
+        request,
+        "teacher/course_progress.html",
+        {
+            "course": course,
+            "enrollments": enrollments,
+            "ordering": ordering,
+            "ordering_choices": [
+                ("-progress", "进度从高到低"),
+                ("progress", "进度从低到高"),
+                ("-last_learned_at", "最近学习优先"),
+                ("last_learned_at", "最早学习优先"),
+                ("-joined_at", "最近加入优先"),
+                ("joined_at", "最早加入优先"),
+                ("username", "姓名 A-Z"),
+                ("-username", "姓名 Z-A"),
+            ],
         },
     )
 

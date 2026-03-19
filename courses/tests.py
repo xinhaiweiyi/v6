@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from accounts.models import User
 from courses.models import Category, Chapter, Course, Lesson
+from learning.models import Enrollment, LessonProgress
 
 
 def make_mp4_with_duration(seconds, timescale=1000):
@@ -184,3 +185,43 @@ class CourseReviewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.course.refresh_from_db()
         self.assertFalse(self.course.cover)
+
+    def test_teacher_can_view_student_progress_sorted(self):
+        self.course.cover = SimpleUploadedFile("cover.png", b"fake-image-content", content_type="image/png")
+        self.course.save(update_fields=["cover", "updated_at"])
+        second_lesson = Lesson.objects.create(
+            chapter=self.chapter,
+            title="Lesson 2",
+            order=2,
+            duration_seconds=150,
+            video=SimpleUploadedFile("lesson2.mp4", b"video-content-2", content_type="video/mp4"),
+        )
+        student_a = User.objects.create_user(
+            email="student-a@example.com",
+            username="Alice",
+            password="StrongPass123!",
+            role=User.Role.STUDENT,
+        )
+        student_b = User.objects.create_user(
+            email="student-b@example.com",
+            username="Bob",
+            password="StrongPass123!",
+            role=User.Role.STUDENT,
+        )
+        enrollment_a = Enrollment.objects.create(student=student_a, course=self.course)
+        enrollment_b = Enrollment.objects.create(student=student_b, course=self.course)
+        LessonProgress.objects.create(enrollment=enrollment_a, lesson=self.lesson, completed=True, last_position_seconds=120)
+        LessonProgress.objects.create(enrollment=enrollment_a, lesson=second_lesson, completed=True, last_position_seconds=150)
+        LessonProgress.objects.create(enrollment=enrollment_b, lesson=self.lesson, completed=True, last_position_seconds=120)
+        self.client.force_login(self.teacher)
+
+        response = self.client.get(
+            reverse("courses:teacher-course-progress", args=[self.course.id]),
+            {"ordering": "-progress"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.course.cover.url)
+        self.assertEqual(response.context["enrollments"][0].student, student_a)
+        self.assertEqual(response.context["enrollments"][0].progress_percent, 100)
+        self.assertEqual(response.context["enrollments"][1].progress_percent, 50)

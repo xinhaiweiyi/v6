@@ -12,6 +12,7 @@ urlpatterns = [
     path("users/<int:user_id>/deactivate/", views.admin_user_deactivate, name="user-deactivate"),
     path("comments/", views.admin_comment_list, name="comments"),
     path("courses/", views.admin_course_review_list, name="courses"),
+    path("courses/<int:course_id>/category/", views.admin_course_update_category, name="course-update-category"),
     path("courses/<int:course_id>/preview/", views.admin_course_preview, name="course-preview"),
     path("courses/<int:course_id>/approve/", views.admin_course_approve, name="course-approve"),
     path("courses/<int:course_id>/reject/", views.admin_course_reject, name="course-reject"),

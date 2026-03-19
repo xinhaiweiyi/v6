@@ -5,75 +5,68 @@
 {% block sidebar_desc %}集中查看你已加入的全部课程。{% endblock %}
 
 {% block sidebar %}
-<a href="{% url 'learning:student-dashboard' %}" class="dashboard-link is-active">学习中心</a>
+    <a href="{% url 'learning:student-dashboard' %}" class="dashboard-link is-active">学习中心</a>
     <a href="{% url 'learning:student-center' %}" class="dashboard-link">我的评论</a>
-<a href="{% url 'portal:home' %}" class="dashboard-link">返回课程广场</a>
-<a href="{% url 'accounts:profile' %}" class="dashboard-link">账号信息</a>
+    <a href="{% url 'portal:home' %}" class="dashboard-link">返回课程广场</a>
+    <a href="{% url 'accounts:profile' %}" class="dashboard-link">账号信息</a>
 {% endblock %}
 
 {% block dashboard_content %}
-<section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft lg:p-7">
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-
-            <h1 class="text-2xl font-semibold text-slate-900">我的课程</h1>
-            <p class="mt-1 text-sm text-slate-500">点击课程即可继续观看，封面和最近学习进度都会显示在这里。</p>
-        </div>
-        <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            共 {{ enrollments|length }} 门课程
-        </div>
-    </div>
-
-    <div class="mt-6 grid gap-5 lg:grid-cols-3">
-        {% for enrollment in enrollments %}
-        <a href="{% url 'learning:learn-course' enrollment.course.slug %}"
-            class="group overflow-hidden rounded-[24px] border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-soft">
-            <div class="aspect-[16/9] overflow-hidden bg-slate-100">
-                {% if enrollment.course.cover %}
-                <img src="{{ enrollment.course.cover.url }}" alt="{{ enrollment.course.title }}"
-                    class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]">
-                {% else %}
-                <div
-                    class="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900 text-sm font-medium tracking-[0.2em] text-white/80">
-                    COURSE
-                </div>
-                {% endif %}
+    <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft lg:p-7">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <h1 class="text-2xl font-semibold text-slate-900">我的课程</h1>
+                <p class="mt-1 text-sm text-slate-500">点击课程即可继续观看，封面、最近学习内容和学习进度都会显示在这里。</p>
             </div>
-            <div class="space-y-3 p-5">
-                <div class="flex items-start justify-between gap-4">
-                    <div class="min-w-0">
-                        <p class="text-xs font-medium uppercase tracking-[0.22em] text-sky-700">
-                            {{ enrollment.course.category.name }}</p>
-                        <h2 class="mt-2 text-lg font-semibold text-slate-900">{{ enrollment.course.title }}</h2>
-                    </div>
-                    <span
-                        class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{{ enrollment.joined_at|date:"Y-m-d" }}</span>
-                </div>
-                <p class="text-sm leading-6 text-slate-500">
-                    {% if enrollment.last_lesson %}
-                    最近学习：{{ enrollment.last_lesson.title }}
-                    {% else %}
-                    尚未开始学习，点击进入课程即可开始观看。
-                    {% endif %}
-                </p>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-slate-400">
-                        {% if enrollment.last_learned_at %}
-                        上次学习 {{ enrollment.last_learned_at|date:"m-d H:i" }}
+            <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                共 {{ enrollments|length }} 门课程
+            </div>
+        </div>
+
+        <div class="mt-6 grid gap-5 lg:grid-cols-3">
+            {% for enrollment in enrollments %}
+                <a href="{% url 'learning:learn-course' enrollment.course.slug %}" class="group overflow-hidden rounded-[24px] border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-soft">
+                    <div class=" overflow-hidden  bg-slate-100">
+                        {% if enrollment.course.cover %}
+                            <img src="{{ enrollment.course.cover.url }}" alt="{{ enrollment.course.title }}" class="mx-auto object-cover transition duration-300 group-hover:scale-[1.02]">
                         {% else %}
-                        刚加入课程
+                            <div class="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900 text-sm font-medium tracking-[0.2em] text-white/80">
+                                COURSE
+                            </div>
                         {% endif %}
-                    </span>
-                    <span class="font-medium text-sky-700">进入课程</span>
+                    </div>
+                    <div class="space-y-3 p-5">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium uppercase tracking-[0.22em] text-sky-700">{{ enrollment.course.category.name }}</p>
+                                <h2 class="mt-2 text-lg font-semibold text-slate-900">{{ enrollment.course.title }}</h2>
+                            </div>
+                            <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">{{ enrollment.joined_at|date:"Y-m-d" }}</span>
+                        </div>
+                        <p class="text-sm leading-6 text-slate-500">
+                            {% if enrollment.last_lesson %}
+                                最近学习：{{ enrollment.last_lesson.title }}
+                            {% else %}
+                                尚未开始学习，点击进入课程即可开始观看。
+                            {% endif %}
+                        </p>
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="font-medium text-slate-700">学习进度</span>
+                                <span class="font-semibold text-sky-700">{{ enrollment.progress_percent }}%</span>
+                            </div>
+                            <div class="h-2.5 rounded-full bg-slate-100">
+                                <div class="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500" style="width: {{ enrollment.progress_percent }}%;"></div>
+                            </div>
+                            <p class="text-xs text-slate-400">已完成 {{ enrollment.completed_lessons_count }}/{{ enrollment.total_lessons_count }} 节视频</p>
+                        </div>
+                    </div>
+                </a>
+            {% empty %}
+                <div class="rounded-[24px] border border-dashed border-slate-300 px-6 py-14 text-center text-slate-500 lg:col-span-3">
+                    你还没有加入课程，去课程广场看看吧。
                 </div>
-            </div>
-        </a>
-        {% empty %}
-        <div
-            class="rounded-[24px] border border-dashed border-slate-300 px-6 py-14 text-center text-slate-500 lg:col-span-2">
-            你还没有加入课程，去课程广场看看吧。
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-</section>
+    </section>
 {% endblock %}

@@ -292,6 +292,36 @@ def admin_category_update(request, category_id):
     else:
         messages.error(request, "分类更新失败，请检查输入。")
     return redirect("admin_panel:categories")
+
+
+@role_required("admin")
+def admin_course_review_list(request):
+    status = request.GET.get("status", "").strip()
+    courses = Course.objects.select_related("teacher", "category").order_by("-submitted_at", "-updated_at")
+    if status:
+        courses = courses.filter(status=status)
+    return render(
+        request,
+        "admin_panel/courses.html",
+        {
+            "courses": courses,
+            "categories": Category.objects.all().order_by("name"),
+            "status": status,
+            "status_choices": [("", "全部状态"), *Course.Status.choices],
+        },
+    )
+
+
+@role_required("admin")
+@require_POST
+def admin_course_update_category(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    category = get_object_or_404(Category, pk=request.POST.get("category"))
+    course.category = category
+    course.save(update_fields=["category", "updated_at"])
+    messages.success(request, "课程分类已更新。")
+    next_url = request.POST.get("next", "").strip()
+    return redirect(next_url or "admin_panel:courses")
 @role_required("admin")
 @require_POST
 def admin_category_delete(request, category_id):

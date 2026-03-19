@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -11,13 +11,28 @@ from learning.forms import CommentForm
 from learning.models import Comment, Enrollment, LessonProgress
 
 
+def _attach_progress_stats(enrollments):
+    for enrollment in enrollments:
+        total_lessons = getattr(enrollment, "total_lessons", 0) or 0
+        completed_lessons = getattr(enrollment, "completed_lessons", 0) or 0
+        enrollment.progress_percent = 0 if total_lessons == 0 else int(round(completed_lessons * 100 / total_lessons))
+        enrollment.total_lessons_count = total_lessons
+        enrollment.completed_lessons_count = completed_lessons
+    return enrollments
+
+
 @role_required("student")
 def student_dashboard(request):
-    enrollments = (
+    enrollments = list(
         Enrollment.objects.filter(student=request.user)
         .select_related("course", "course__category", "last_lesson")
+        .annotate(
+            total_lessons=Count("course__chapters__lessons", distinct=True),
+            completed_lessons=Count("progresses", filter=Q(progresses__completed=True), distinct=True),
+        )
         .order_by("-last_learned_at", "-joined_at")
     )
+    _attach_progress_stats(enrollments)
     return render(
         request,
         "student/dashboard.html",

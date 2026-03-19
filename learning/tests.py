@@ -81,6 +81,17 @@ class LearningFlowTests(TestCase):
         self.assertContains(response, self.course.cover.url)
         self.assertNotContains(response, "推荐课程")
 
+    def test_student_dashboard_shows_progress_percentage(self):
+        enrollment = Enrollment.objects.create(student=self.student, course=self.course)
+        LessonProgress.objects.create(enrollment=enrollment, lesson=self.lesson, completed=True, last_position_seconds=180)
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse("learning:student-dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "100%")
+        self.assertContains(response, "已完成 1/1 节视频")
+
     def test_teacher_can_delete_comment_under_own_course(self):
         Enrollment.objects.create(student=self.student, course=self.course)
         comment = Comment.objects.create(course=self.course, lesson=self.lesson, user=self.student, content="test")

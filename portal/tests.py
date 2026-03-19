@@ -54,6 +54,20 @@ class AdminCourseReviewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.published_course.title)
 
+    def test_admin_can_update_course_category_from_review_list(self):
+        new_category = Category.objects.create(name="Design", is_active=True)
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("admin_panel:course-update-category", args=[self.published_course.id]),
+            {"category": new_category.id, "next": reverse("admin_panel:courses")},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.published_course.refresh_from_db()
+        self.assertEqual(self.published_course.category, new_category)
+
     def test_admin_comment_list_links_to_exact_comment_area(self):
         chapter = Chapter.objects.create(course=self.published_course, title="第一章", order=1)
         lesson = Lesson.objects.create(

@@ -60,7 +60,7 @@ def send_verification_code(email):
             fail_silently=False,
         )
     except Exception:
-        return True, f"邮件发送失败，已切换为开发模式验证码：{code}"
+        return True, "邮件发送失败"
     return True, "验证码已发送，请前往邮箱查收。"
 
 

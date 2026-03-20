@@ -3,6 +3,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from unittest.mock import patch
 
 from accounts.models import User
 
@@ -40,6 +41,13 @@ class AccountFlowTests(TestCase):
 
         self.assertRedirects(register_response, reverse("learning:student-dashboard"))
         self.assertTrue(User.objects.filter(email="student@example.com", role="student").exists())
+
+    @patch("accounts.services.send_mail", side_effect=RuntimeError("smtp error"))
+    def test_send_code_failure_only_shows_mail_error(self, _mock_send_mail):
+        response = self.client.post(reverse("accounts:send-code"), {"email": "student-fail@example.com"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {"ok": True, "message": "邮件发送失败"})
 
     def test_admin_cannot_register_from_frontend(self):
         response = self.client.post(

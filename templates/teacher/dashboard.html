@@ -1,51 +1,75 @@
 {% extends 'base_dashboard.html' %}
 
-{% block title %}老师端 | 在线视频学习系统{% endblock %}
-{% block sidebar_title %}老师端{% endblock %}
-{% block sidebar_desc %}查看自己课程下的评论，并进入对应评论区进行回复或删除。{% endblock %}
+{% block title %}教师工作台 | 在线视频学习系统{% endblock %}
+{% block sidebar_title %}教师工作台{% endblock %}
+{% block sidebar_desc %}查看课程数据概览，并快速进入课程评论区处理互动内容。{% endblock %}
 
 {% block sidebar %}
-<a href="{% url 'portal:teacher-dashboard' %}" class="dashboard-link is-active">评论管理</a>
-<a href="{% url 'courses:teacher-courses' %}" class="dashboard-link">课程管理</a>
-<a href="{% url 'accounts:profile' %}" class="dashboard-link">账号信息</a>
-<a href="{% url 'portal:home' %}" class="dashboard-link">课程广场</a>
+    <a href="{% url 'portal:teacher-dashboard' %}" class="dashboard-link is-active">工作台</a>
+    <a href="{% url 'courses:teacher-courses' %}" class="dashboard-link">课程管理</a>
+    <a href="{% url 'accounts:profile' %}" class="dashboard-link">账号信息</a>
+    <a href="{% url 'portal:home' %}" class="dashboard-link">课程广场</a>
 {% endblock %}
 
 {% block dashboard_content %}
-<div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-    <div class="flex items-center justify-between gap-4">
-        <div>
-            <h1 class="text-xl font-semibold text-slate-900">评论管理</h1>
-            <p class="mt-1 text-sm text-slate-500">点击任意评论，进入对应课程的评论区进行回复或删除。</p>
-        </div>
-        <div class="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-            <p class="text-xs text-slate-500">评论总数</p>
-            <p class="text-2xl font-semibold text-slate-900">{{ stats.comments }}</p>
-        </div>
-    </div>
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+            <p class="text-sm font-medium text-gray-900">课程总数</p>
+            <p class="mt-3 text-3xl font-semibold text-slate-900">{{ stats.total_courses }}</p>
+            <p class="mt-2 text-xs text-slate-400">当前账号名下的全部课程</p>
+        </article>
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+            <p class="text-sm font-medium text-gray-900">待审核课程</p>
+            <p class="mt-3 text-3xl font-semibold text-amber-900">{{ stats.pending_courses }}</p>
+            <p class="mt-2 text-xs text-slate-400">已提交并等待管理员处理</p>
+        </article>
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+            <p class="text-sm font-medium text-gray-900">已发布课程</p>
+            <p class="mt-3 text-3xl font-semibold text-emerald-900">{{ stats.published_courses }}</p>
+            <p class="mt-2 text-xs text-slate-400">已在课程广场对外展示</p>
+        </article>
+        <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+            <p class="text-sm font-medium text-gray-900">评论数</p>
+            <p class="mt-3 text-3xl font-semibold text-sky-900">{{ stats.comments }}</p>
+            <p class="mt-2 text-xs text-slate-400">仅统计未删除评论</p>
+        </article>
+    </section>
 
-    <div class="mt-6 space-y-3">
-        {% for comment in comments %}
-        <a href="{% url 'learning:learn-course' comment.course.slug %}?lesson={{ comment.lesson_id }}#comment-{{ comment.id }}"
-            class="block rounded-2xl border border-slate-200 px-4 py-4 transition hover:border-sky-200 hover:bg-sky-50">
-            <div class="flex items-start justify-between gap-4">
-                <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                        <span>{{ comment.course.title }}</span>
-                        <span>·</span>
-                        <span>{{ comment.lesson.title }}</span>
-                        <span>·</span>
-                        <span>{{ comment.created_at|date:"Y-m-d H:i" }}</span>
-                    </div>
-                    <p class="mt-2 font-medium text-slate-900">{{ comment.user.display_name }}</p>
-                    <p class="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{{ comment.display_content }}</p>
-                </div>
-                <span class="shrink-0 text-sm font-medium text-sky-700">进入评论区</span>
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h1 class="text-xl font-semibold text-slate-900">最新评论</h1>
+                <p class="mt-1 text-sm text-slate-500">点击任意评论，进入对应课程的评论区进行回复或删除。</p>
             </div>
-        </a>
-        {% empty %}
-        <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-slate-500">还没有学生评论。</div>
-        {% endfor %}
-    </div>
-</div>
+            <a href="{% url 'courses:teacher-courses' %}" class="btn btn-outline rounded-lg border-slate-300">管理课程</a>
+        </div>
+
+        <div class="mt-6 space-y-3">
+            {% for comment in comments %}
+                <a
+                    href="{% url 'learning:learn-course' comment.course.slug %}?lesson={{ comment.lesson_id }}#comment-{{ comment.id }}"
+                    class="block rounded-2xl border border-slate-200 px-4 py-4 transition hover:border-sky-200 hover:bg-sky-50"
+                >
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+                                <span>{{ comment.course.title }}</span>
+                                <span>/</span>
+                                <span>{{ comment.lesson.title }}</span>
+                                <span>/</span>
+                                <span>{{ comment.created_at|date:"Y-m-d H:i" }}</span>
+                            </div>
+                            <p class="mt-2 font-medium text-slate-900">{{ comment.user.display_name }}</p>
+                            <p class="mt-1 line-clamp-2 text-sm leading-6 text-slate-600">{{ comment.display_content }}</p>
+                        </div>
+                        <span class="shrink-0 text-sm font-medium text-sky-700">进入评论区</span>
+                    </div>
+                </a>
+            {% empty %}
+                <div class="rounded-2xl border border-dashed border-slate-300 px-4 py-10 text-center text-slate-500">
+                    暂时还没有学生评论。
+                </div>
+            {% endfor %}
+        </div>
+    </section>
 {% endblock %}

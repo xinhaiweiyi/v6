@@ -16,22 +16,60 @@
             <form method="post" enctype="multipart/form-data" class="mt-5 space-y-5">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="profile">
-                <label class="form-control block">
-                    <span class="mb-2 block text-sm font-medium text-slate-700">当前头像</span>
-                    {% if request.user.avatar %}
-                        <a href="{{ request.user.avatar.url }}" class="text-sm text-sky-700">查看已上传头像</a>
-                    {% else %}
-                        <span class="text-sm text-slate-400">暂未上传头像</span>
-                    {% endif %}
-                </label>
+
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <span class="mb-3 block text-sm font-medium text-slate-700">当前头像</span>
+                    <div class="flex items-center gap-4">
+                        <div
+                            class="flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm"
+                            style="width: 80px; height: 80px;"
+                        >
+                            {% if request.user.avatar %}
+                                <img
+                                    id="avatar-preview"
+                                    src="{{ request.user.avatar.url }}"
+                                    alt="{{ request.user.display_name }}"
+                                    class="h-full w-full object-cover"
+                                >
+                            {% else %}
+                                <div
+                                    id="avatar-fallback"
+                                    class="flex h-full w-full items-center justify-center bg-sky-100 font-semibold text-sky-700"
+                                    style="font-size: 1.25rem;"
+                                >
+                                    {{ request.user.display_name|slice:":1" }}
+                                </div>
+                                <img
+                                    id="avatar-preview"
+                                    src=""
+                                    alt="{{ request.user.display_name }}"
+                                    class="hidden h-full w-full object-cover"
+                                >
+                            {% endif %}
+                        </div>
+                        <div class="max-w-xs text-sm text-slate-500">
+                            <p>上传后会直接显示新头像。</p>
+                            <p class="mt-1">支持常见图片格式，建议使用方形图片。</p>
+                        </div>
+                    </div>
+                </div>
+
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">用户名</span>
                     {{ profile_form.username }}
+                    {% if profile_form.username.errors %}
+                        <span class="mt-2 text-sm text-rose-500">{{ profile_form.username.errors|join:" " }}</span>
+                    {% endif %}
                 </label>
+
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">上传头像</span>
                     {{ profile_form.avatar }}
+                    {% if profile_form.avatar.errors %}
+                        <span class="mt-2 text-sm text-rose-500">{{ profile_form.avatar.errors|join:" " }}</span>
+                    {% endif %}
                 </label>
+
                 <button type="submit" class="btn btn-primary rounded-lg text-white">保存资料</button>
             </form>
         </div>
@@ -41,21 +79,71 @@
             <form method="post" class="mt-5 space-y-5">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="password">
-                {{ password_form.non_field_errors }}
+
+                {% if password_form.non_field_errors %}
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                        {{ password_form.non_field_errors|join:" " }}
+                    </div>
+                {% endif %}
+
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">原密码</span>
                     {{ password_form.old_password }}
+                    {% if password_form.old_password.errors %}
+                        <span class="mt-2 text-sm text-rose-500">{{ password_form.old_password.errors|join:" " }}</span>
+                    {% endif %}
                 </label>
+
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">新密码</span>
                     {{ password_form.new_password1 }}
+                    {% if password_form.new_password1.errors %}
+                        <span class="mt-2 text-sm text-rose-500">{{ password_form.new_password1.errors|join:" " }}</span>
+                    {% endif %}
                 </label>
+
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">确认新密码</span>
                     {{ password_form.new_password2 }}
+                    {% if password_form.new_password2.errors %}
+                        <span class="mt-2 text-sm text-rose-500">{{ password_form.new_password2.errors|join:" " }}</span>
+                    {% endif %}
                 </label>
+
                 <button type="submit" class="btn btn-outline rounded-lg border-slate-300">更新密码</button>
             </form>
         </div>
     </div>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        (function () {
+            const input = document.getElementById("id_avatar");
+            const preview = document.getElementById("avatar-preview");
+            const fallback = document.getElementById("avatar-fallback");
+
+            if (!input || !preview) {
+                return;
+            }
+
+            input.addEventListener("change", function (event) {
+                const file = event.target.files && event.target.files[0];
+                if (!file) {
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (loadEvent) {
+                    preview.src = loadEvent.target.result;
+                    preview.classList.remove("hidden");
+                    if (fallback) {
+                        fallback.classList.add("hidden");
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        })();
+    </script>
 {% endblock %}

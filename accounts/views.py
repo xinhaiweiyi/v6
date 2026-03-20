@@ -63,21 +63,33 @@ def profile_view(request):
     if not request.user.is_authenticated:
         return redirect("accounts:login")
 
-    profile_form = ProfileForm(request.POST or None, request.FILES or None, instance=request.user)
-    password_form = PasswordUpdateForm(request.user, request.POST or None, prefix="password")
+    action = request.POST.get("action") if request.method == "POST" else None
+    profile_form = ProfileForm(
+        request.POST if action == "profile" else None,
+        request.FILES if action == "profile" else None,
+        instance=request.user,
+    )
+    password_form = PasswordUpdateForm(
+        request.user,
+        request.POST if action == "password" else None,
+        prefix="password",
+    )
 
     if request.method == "POST":
-        action = request.POST.get("action")
         if action == "profile" and profile_form.is_valid():
             profile_form.save()
             messages.success(request, "账号信息已更新。")
             return redirect("accounts:profile")
+        if action == "profile":
+            messages.error(request, "资料保存失败，请检查输入。")
         if action == "password" and password_form.is_valid():
             request.user.set_password(password_form.cleaned_data["new_password1"])
             request.user.save(update_fields=["password"])
             update_session_auth_hash(request, request.user)
             messages.success(request, "密码修改成功。")
             return redirect("accounts:profile")
+        if action == "password":
+            messages.error(request, "密码修改失败，请检查输入。")
 
     return render(
         request,

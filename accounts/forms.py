@@ -118,9 +118,12 @@ class ProfileForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         apply_control_style(self.fields["username"])
-        self.fields["avatar"].widget.attrs.setdefault(
-            "class",
-            "file-input file-input-bordered w-full rounded-lg border-slate-200 bg-white",
+        self.fields["avatar"].widget = forms.FileInput(
+            attrs={
+                "class": "file-input file-input-bordered w-full rounded-lg border-slate-200 bg-white",
+                "accept": "image/*",
+                "id": "id_avatar",
+            }
         )
 
     class Meta:

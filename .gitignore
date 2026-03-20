@@ -3,5 +3,4 @@ __pycache__
 db.sqlite3
 media/
 venv/
-export_project_code.py
-project_code_dump.txt
+md/

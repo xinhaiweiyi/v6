@@ -22,6 +22,67 @@ class PortalRedirectTests(TestCase):
         self.assertRedirects(response, reverse("learning:student-dashboard"))
 
 
+class TeacherDashboardTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user(
+            email="teacher-dashboard@example.com",
+            username="教师工作台",
+            password="StrongPass123!",
+            role=User.Role.TEACHER,
+        )
+        self.category = Category.objects.create(name="Teacher Dashboard Category", is_active=True)
+        self.pending_course = Course.objects.create(
+            teacher=self.teacher,
+            category=self.category,
+            title="待审核课程",
+            description="待审核",
+            status=Course.Status.PENDING,
+        )
+        self.published_course = Course.objects.create(
+            teacher=self.teacher,
+            category=self.category,
+            title="已发布课程",
+            description="已发布",
+            status=Course.Status.PUBLISHED,
+        )
+        chapter = Chapter.objects.create(course=self.published_course, title="第一章", order=1)
+        self.lesson = Lesson.objects.create(
+            chapter=chapter,
+            title="第一节",
+            order=1,
+            duration_seconds=120,
+            video="course_videos/test.mp4",
+        )
+        self.student = User.objects.create_user(
+            email="teacher-dashboard-student@example.com",
+            username="学生A",
+            password="StrongPass123!",
+            role=User.Role.STUDENT,
+        )
+        Comment.objects.create(
+            course=self.published_course,
+            lesson=self.lesson,
+            user=self.student,
+            content="老师你好",
+        )
+
+    def test_teacher_dashboard_shows_all_stat_cards(self):
+        self.client.force_login(self.teacher)
+
+        response = self.client.get(reverse("portal:teacher-dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "课程总数")
+        self.assertContains(response, "待审核课程")
+        self.assertContains(response, "已发布课程")
+        self.assertContains(response, "评论数")
+        self.assertContains(response, self.pending_course.title)
+        self.assertEqual(response.context["stats"]["total_courses"], 2)
+        self.assertEqual(response.context["stats"]["pending_courses"], 1)
+        self.assertEqual(response.context["stats"]["published_courses"], 1)
+        self.assertEqual(response.context["stats"]["comments"], 1)
+
+
 class AdminCourseReviewTests(TestCase):
     def setUp(self):
         self.admin_user = User.objects.create_user(
@@ -67,6 +128,14 @@ class AdminCourseReviewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.published_course.refresh_from_db()
         self.assertEqual(self.published_course.category, new_category)
+
+    def test_admin_user_list_shows_deactivate_confirm_prompt(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("admin_panel:users"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "确定要注销这个用户吗？注销后该用户将无法登录系统。")
 
     def test_admin_comment_list_links_to_exact_comment_area(self):
         chapter = Chapter.objects.create(course=self.published_course, title="第一章", order=1)

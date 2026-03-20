@@ -204,10 +204,19 @@ def submit_review(request, course_id):
 def teacher_course_offline(request, course_id):
     course = get_object_or_404(Course, pk=course_id, teacher=request.user)
     course.status = Course.Status.OFFLINE
-    course.offline_reason = request.POST.get("offline_reason", "老师主动下架课程").strip() or "老师主动下架课程"
+    course.offline_reason = ""
     course.review_note = "课程已由老师主动下架。"
     course.save(update_fields=["status", "offline_reason", "review_note", "updated_at"])
     return JsonResponse({"ok": True, "message": "课程已下架。"})
+
+
+@role_required("teacher")
+@require_POST
+def teacher_course_delete(request, course_id):
+    course = get_object_or_404(Course, pk=course_id, teacher=request.user)
+    course.delete()
+    messages.success(request, "课程已删除。")
+    return redirect("courses:teacher-courses")
 
 
 @login_required
@@ -245,6 +254,8 @@ def teacher_course_progress(request, course_id):
         teacher=request.user,
     )
     ordering = request.GET.get("ordering", "-progress")
+    if ordering not in {"-progress", "progress"}:
+        ordering = "-progress"
     enrollments = (
         Enrollment.objects.filter(course=course)
         .select_related("student", "last_lesson")
@@ -260,17 +271,10 @@ def teacher_course_progress(request, course_id):
             )
         )
     )
-    ordering_map = {
-        "-progress": ["-progress_percent_db", "-last_learned_at", "-joined_at"],
-        "progress": ["progress_percent_db", "joined_at"],
-        "-last_learned_at": ["-last_learned_at", "-joined_at"],
-        "last_learned_at": ["last_learned_at", "joined_at"],
-        "joined_at": ["joined_at"],
-        "-joined_at": ["-joined_at"],
-        "username": ["student__username", "joined_at"],
-        "-username": ["-student__username", "joined_at"],
-    }
-    enrollments = list(enrollments.order_by(*ordering_map.get(ordering, ordering_map["-progress"])))
+    if ordering == "progress":
+        enrollments = list(enrollments.order_by("progress_percent_db", "last_learned_at", "joined_at"))
+    else:
+        enrollments = list(enrollments.order_by("-progress_percent_db", "-last_learned_at", "-joined_at"))
     _attach_enrollment_progress(enrollments)
     return render(
         request,
@@ -280,14 +284,8 @@ def teacher_course_progress(request, course_id):
             "enrollments": enrollments,
             "ordering": ordering,
             "ordering_choices": [
-                ("-progress", "进度从高到低"),
-                ("progress", "进度从低到高"),
-                ("-last_learned_at", "最近学习优先"),
-                ("last_learned_at", "最早学习优先"),
-                ("-joined_at", "最近加入优先"),
-                ("joined_at", "最早加入优先"),
-                ("username", "姓名 A-Z"),
-                ("-username", "姓名 Z-A"),
+                ("-progress", "学习进度从高到低"),
+                ("progress", "学习进度从低到高"),
             ],
         },
     )

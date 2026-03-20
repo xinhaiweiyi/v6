@@ -54,7 +54,7 @@
                             <td class="py-3 pr-4">{{ user.created_at|date:"Y-m-d H:i" }}</td>
                             <td class="py-3">
                                 {% if user.is_active %}
-                                    <form method="post" action="{% url 'admin_panel:user-deactivate' user.id %}">
+                                    <form method="post" action="{% url 'admin_panel:user-deactivate' user.id %}" onsubmit="return confirm('确定要注销这个用户吗？注销后该用户将无法登录系统。');">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-outline rounded-lg border-slate-300">注销用户</button>
                                     </form>

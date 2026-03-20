@@ -1,5 +1,6 @@
 from django.core import mail
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -55,3 +56,60 @@ class AccountFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(User.objects.filter(email="admin@example.com", role="admin").exists())
+
+    def test_profile_page_shows_avatar_preview_without_clear_checkbox(self):
+        user = User.objects.create_user(
+            email="profile@example.com",
+            username="ProfileUser",
+            password="StrongPass123!",
+        )
+        user.avatar = SimpleUploadedFile("avatar.jpg", b"avatar-image", content_type="image/jpeg")
+        user.save(update_fields=["avatar", "updated_at"])
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("accounts:profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, user.avatar.url)
+        self.assertContains(response, 'id="avatar-preview"')
+        self.assertContains(response, 'accept="image/*"')
+        self.assertNotContains(response, "清除")
+        self.assertNotContains(response, "Currently")
+
+    def test_profile_page_uses_image_file_input_without_default_clear_control(self):
+        user = User.objects.create_user(
+            email="profile2@example.com",
+            username="ProfileUser2",
+            password="StrongPass123!",
+        )
+        user.avatar = SimpleUploadedFile("avatar2.jpg", b"avatar-image-2", content_type="image/jpeg")
+        user.save(update_fields=["avatar", "updated_at"])
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("accounts:profile"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'type="file"')
+        self.assertNotContains(response, 'name="avatar-clear"')
+
+    def test_profile_password_mismatch_shows_error_message(self):
+        user = User.objects.create_user(
+            email="password-mismatch@example.com",
+            username="PasswordUser",
+            password="StrongPass123!",
+        )
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse("accounts:profile"),
+            {
+                "action": "password",
+                "password-old_password": "StrongPass123!",
+                "password-new_password1": "NewStrongPass123!",
+                "password-new_password2": "DifferentStrongPass123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "密码修改失败，请检查输入。")
+        self.assertContains(response, "两次输入的密码不一致")

@@ -8,8 +8,8 @@
 {% block sidebar %}
     <a href="{% url 'portal:teacher-dashboard' %}" class="dashboard-link">工作台</a>
     <a href="{% url 'courses:teacher-courses' %}" class="dashboard-link is-active">课程管理</a>
-    <a href="{% url 'courses:teacher-course-create' %}" class="dashboard-link">新建课程</a>
     <a href="{% url 'accounts:profile' %}" class="dashboard-link">账号信息</a>
+    <a href="{% url 'portal:home' %}" class="dashboard-link">课程广场</a>
 {% endblock %}
 
 {% block dashboard_content %}
@@ -63,11 +63,15 @@
                 {% if course.offline_reason %}
                     <div class="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">下架原因：{{ course.offline_reason }}</div>
                 {% endif %}
-                <div class="mt-5 flex flex-wrap gap-3">
+                <div class="mt-5 flex flex-row gap-3">
                     <a href="{% url 'courses:teacher-course-edit' course.id %}" class="btn btn-outline rounded-lg border-slate-300">编辑课程</a>
                     <a href="{% url 'courses:teacher-course-preview' course.id %}" class="btn btn-outline rounded-lg border-slate-300">预览视频</a>
                     <a href="{% url 'courses:teacher-course-progress' course.id %}" class="btn btn-outline rounded-lg border-slate-300">学员进度</a>
                     <button type="button" class="btn btn-outline rounded-lg border-rose-200 text-rose-600" data-offline-course data-course-id="{{ course.id }}">主动下架</button>
+                    <form method="post" action="{% url 'courses:teacher-course-delete' course.id %}" onsubmit="return confirm('确定要删除这门课程吗？删除后课程、章节和视频记录将一起移除。');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline rounded-lg border-rose-200 text-rose-600">删除</button>
+                    </form>
                 </div>    
             </article>
         {% empty %}
@@ -80,9 +84,9 @@
 <script>
     document.querySelectorAll('[data-offline-course]').forEach((button) => {
         button.addEventListener('click', async () => {
-            const reason = prompt('请输入下架原因', '老师主动下架课程');
-            if (!reason) return;
-            const response = await window.app.post(`/teacher/courses/${button.dataset.courseId}/offline/`, { offline_reason: reason }, button);
+            const confirmed = window.confirm('确定要主动下架这门课程吗？');
+            if (!confirmed) return;
+            const response = await window.app.post(`/teacher/courses/${button.dataset.courseId}/offline/`, {}, button);
             if (response?.ok) {
                 window.app.toast(response.message, 'success');
                 window.location.reload();

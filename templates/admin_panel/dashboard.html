@@ -1,38 +1,49 @@
 {% extends 'base_dashboard.html' %}
-
 {% block title %}管理员看板 | 在线视频学习系统{% endblock %}
 {% block sidebar_title %}管理员端{% endblock %}
 {% block sidebar_desc %}课程审核、用户管理、评论治理和数据看板。{% endblock %}
-
 {% block extra_head %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 {% endblock %}
-
 {% block sidebar %}
-    <a href="{% url 'admin_panel:admin-dashboard' %}" class="dashboard-link is-active">数据看板</a>
+    <a href="{% url 'admin_panel:admin-dashboard' %}"
+       class="dashboard-link is-active">数据看板</a>
     <a href="{% url 'admin_panel:courses' %}" class="dashboard-link">课程审核</a>
     <a href="{% url 'admin_panel:users' %}" class="dashboard-link">用户管理</a>
-    <a href="{% url 'admin_panel:comments' %}" class="dashboard-link">评论管理</a>
     <a href="{% url 'admin_panel:categories' %}" class="dashboard-link">分类管理</a>
 {% endblock %}
-
 {% block dashboard_content %}
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div class="stat-card"><p class="stat-label">学生总数</p><p class="stat-value">{{ stats.student_total }}</p></div>
-        <div class="stat-card"><p class="stat-label">老师总数</p><p class="stat-value">{{ stats.teacher_total }}</p></div>
-        <div class="stat-card"><p class="stat-label">课程总数</p><p class="stat-value">{{ stats.course_total }}</p></div>
-        <div class="stat-card"><p class="stat-label">待审核课程</p><p class="stat-value">{{ stats.pending_total }}</p></div>
+        <div class="stat-card">
+            <p class="stat-label">学生总数</p>
+            <p class="stat-value">{{ stats.student_total }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">老师总数</p>
+            <p class="stat-value">{{ stats.teacher_total }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">课程总数</p>
+            <p class="stat-value">{{ stats.course_total }}</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">待审核课程</p>
+            <p class="stat-value">{{ stats.pending_total }}</p>
+        </div>
     </div>
-
     <div class="grid gap-6 xl:grid-cols-2">
-        <div class="chart-card"><canvas id="role-chart" height="220"></canvas></div>
-        <div class="chart-card"><canvas id="course-chart" height="220"></canvas></div>
+        <div class="chart-card">
+            <canvas id="role-chart" height="220"></canvas>
+        </div>
+        <div class="chart-card">
+            <canvas id="course-chart" height="220"></canvas>
+        </div>
     </div>
-
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-semibold text-slate-900">最新课程</h2>
-            <a href="{% url 'admin_panel:courses' %}" class="text-sm font-medium text-sky-700">进入课程审核</a>
+            <a href="{% url 'admin_panel:courses' %}"
+               class="text-sm font-medium text-sky-700">进入课程审核</a>
         </div>
         <div class="mt-5 overflow-x-auto">
             <table class="min-w-full text-sm">
@@ -58,9 +69,8 @@
         </div>
     </div>
 {% endblock %}
-
 {% block extra_js %}
-<script>
+    <script>
     fetch('{% url "admin_panel:dashboard-data" %}')
         .then((response) => response.json())
         .then((payload) => {
@@ -79,5 +89,5 @@
                 }
             });
         });
-</script>
+    </script>
 {% endblock %}

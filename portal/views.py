@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import ProtectedError
@@ -24,7 +22,7 @@ def home(request):
     if category_slug:
         courses = courses.filter(category__slug=category_slug)
     if keyword:
-        courses = courses.filter(Q(title__icontains=keyword) | Q(description__icontains=keyword))
+        courses = courses.filter(Q(title__icontains=keyword) | Q(description__icontains=keyword) | Q(teacher__username__icontains=keyword))
     categories = Category.objects.filter(is_active=True).annotate(course_total=Count("courses"))
     return render(
         request,
@@ -137,52 +135,13 @@ def admin_user_list(request):
 @require_POST
 def admin_user_deactivate(request, user_id):
     user = get_object_or_404(User, pk=user_id)
-    if user.role == User.Role.ADMIN and User.objects.filter(role=User.Role.ADMIN, is_active=True).count() <= 1:
-        messages.error(request, "至少需要保留一个可用管理员账号。")
+    if user.role == User.Role.ADMIN:
+        messages.error(request, "管理员账号不允许注销。")
     else:
         user.is_active = False
         user.save(update_fields=["is_active", "updated_at"])
         messages.success(request, "用户已注销。")
     return redirect("admin_panel:users")
-
-
-@role_required("admin")
-def admin_comment_list(request):
-    keyword = request.GET.get("keyword", "").strip()
-    time_range = request.GET.get("time_range", "").strip()
-    comments = (
-        Comment.objects.filter(deleted_at__isnull=True)
-        .select_related("user", "course", "lesson", "deleted_by")
-        .order_by("-created_at")
-    )
-    now = timezone.now()
-    if time_range == "today":
-        comments = comments.filter(created_at__gte=now.replace(hour=0, minute=0, second=0, microsecond=0))
-    elif time_range == "7d":
-        comments = comments.filter(created_at__gte=now - timedelta(days=7))
-    elif time_range == "30d":
-        comments = comments.filter(created_at__gte=now - timedelta(days=30))
-    if keyword:
-        comments = comments.filter(
-            Q(content__icontains=keyword)
-            | Q(user__username__icontains=keyword)
-            | Q(course__title__icontains=keyword)
-        )
-    return render(
-        request,
-        "admin_panel/comments.html",
-        {
-            "comments": comments,
-            "keyword": keyword,
-            "time_range": time_range,
-            "time_choices": [
-                ("", "全部时间"),
-                ("today", "今天"),
-                ("7d", "最近7天"),
-                ("30d", "最近30天"),
-            ],
-        },
-    )
 
 
 @role_required("admin")
@@ -205,25 +164,14 @@ def admin_course_review_list(request):
 @role_required("admin")
 def admin_course_preview(request, course_id):
     course = get_object_or_404(
-        Course.objects.select_related("teacher", "category").prefetch_related("chapters__lessons"),
+        Course.objects.only("id", "slug"),
         pk=course_id,
     )
-    lessons = [lesson for chapter in course.chapters.all() for lesson in chapter.lessons.all()]
-    lesson_id = request.GET.get("lesson")
-    active_lesson = next((lesson for lesson in lessons if str(lesson.id) == lesson_id), None)
-    if active_lesson is None:
-        active_lesson = lessons[0] if lessons else None
-    return render(
-        request,
-        "teacher/course_preview.html",
-        {
-            "course": course,
-            "active_lesson": active_lesson,
-            "lessons": lessons,
-            "admin_mode": True,
-            "preview_base_url": reverse("admin_panel:course-preview", args=[course.id]),
-        },
-    )
+    redirect_url = course.get_learn_url()
+    lesson_id = request.GET.get("lesson", "").strip()
+    if lesson_id:
+        redirect_url = f"{redirect_url}?lesson={lesson_id}"
+    return redirect(redirect_url)
 
 
 @role_required("admin")
@@ -284,13 +232,18 @@ def admin_category_manage(request):
 @role_required("admin")
 @require_POST
 def admin_category_update(request, category_id):
+    get_object_or_404(Category, pk=category_id)
+    messages.error(request, "已创建的分类不允许编辑。")
+    return redirect("admin_panel:categories")
+
+
+@role_required("admin")
+@require_POST
+def admin_category_toggle_active(request, category_id):
     category = get_object_or_404(Category, pk=category_id)
-    form = CategoryForm(request.POST, instance=category)
-    if form.is_valid():
-        form.save()
-        messages.success(request, "课程分类已更新。")
-    else:
-        messages.error(request, "分类更新失败，请检查输入。")
+    category.is_active = request.POST.get("is_active") == "true"
+    category.save(update_fields=["is_active", "updated_at"])
+    messages.success(request, f"课程分类已{'启用' if category.is_active else '停用'}。")
     return redirect("admin_panel:categories")
 
 

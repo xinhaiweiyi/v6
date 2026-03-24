@@ -3,7 +3,6 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Case, Count, ExpressionWrapper, F, FloatField, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -222,28 +221,18 @@ def teacher_course_delete(request, course_id):
 @login_required
 def teacher_course_preview(request, course_id):
     course = get_object_or_404(
-        Course.objects.select_related("teacher", "category").prefetch_related("chapters__lessons"),
+        Course.objects.select_related("teacher"),
         pk=course_id,
     )
     if request.user.role == "teacher" and course.teacher_id != request.user.id:
         return redirect("courses:teacher-courses")
     if request.user.role not in {"teacher", "admin"}:
         return redirect("portal:home")
-    lessons = [lesson for chapter in course.chapters.all() for lesson in chapter.lessons.all()]
-    lesson_id = request.GET.get("lesson")
-    active_lesson = next((lesson for lesson in lessons if str(lesson.id) == lesson_id), None)
-    if active_lesson is None:
-        active_lesson = lessons[0] if lessons else None
-    return render(
-        request,
-        "teacher/course_preview.html",
-        {
-            "course": course,
-            "active_lesson": active_lesson,
-            "lessons": lessons,
-            "preview_base_url": reverse("courses:teacher-course-preview", args=[course.id]),
-        },
-    )
+    redirect_url = course.get_learn_url()
+    lesson_id = request.GET.get("lesson", "").strip()
+    if lesson_id:
+        redirect_url = f"{redirect_url}?lesson={lesson_id}"
+    return redirect(redirect_url)
 
 
 @role_required("teacher")

@@ -53,8 +53,8 @@
                     {% if course %}
                     <button type="button" id="submit-review-button"
                         class="btn btn-outline rounded-lg border-slate-300">提交审核</button>
-                    <a href="{% url 'courses:teacher-course-preview' course.id %}"
-                        class="btn btn-outline rounded-lg border-slate-300">预览视频</a>
+                    <a href="{% url 'learning:learn-course' course.slug %}"
+                        class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
                     {% endif %}
                 </div>
             </form>

@@ -120,7 +120,7 @@ class CourseReviewTests(TestCase):
         second_chapter.refresh_from_db()
         self.assertEqual(second_chapter.order, 1)
 
-    def test_teacher_preview_can_switch_active_lesson_from_query_param(self):
+    def test_teacher_can_open_own_unpublished_course_in_shared_learning_page(self):
         second_lesson = Lesson.objects.create(
             chapter=self.chapter,
             title="preview-target",
@@ -131,14 +131,14 @@ class CourseReviewTests(TestCase):
         self.client.force_login(self.teacher)
 
         response = self.client.get(
-            reverse("courses:teacher-course-preview", args=[self.course.id]),
+            reverse("learning:learn-course", args=[self.course.slug]),
             {"lesson": second_lesson.id},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["active_lesson"].id, second_lesson.id)
 
-    def test_admin_preview_can_switch_active_lesson_from_query_param(self):
+    def test_admin_can_open_unpublished_course_in_shared_learning_page(self):
         second_lesson = Lesson.objects.create(
             chapter=self.chapter,
             title="admin-preview-target",
@@ -149,12 +149,26 @@ class CourseReviewTests(TestCase):
         self.client.force_login(self.admin_user)
 
         response = self.client.get(
-            reverse("admin_panel:course-preview", args=[self.course.id]),
+            reverse("learning:learn-course", args=[self.course.slug]),
             {"lesson": second_lesson.id},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["active_lesson"].id, second_lesson.id)
+
+    def test_teacher_preview_route_redirects_to_shared_learning_page(self):
+        self.client.force_login(self.teacher)
+
+        response = self.client.get(reverse("courses:teacher-course-preview", args=[self.course.id]))
+
+        self.assertRedirects(response, reverse("learning:learn-course", args=[self.course.slug]))
+
+    def test_admin_preview_route_redirects_to_shared_learning_page(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("admin_panel:course-preview", args=[self.course.id]))
+
+        self.assertRedirects(response, reverse("learning:learn-course", args=[self.course.slug]))
 
     def test_course_edit_page_shows_existing_cover_preview(self):
         self.course.cover = SimpleUploadedFile("cover.png", b"fake-image-content", content_type="image/png")

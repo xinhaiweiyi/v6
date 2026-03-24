@@ -65,7 +65,7 @@
                 {% endif %}
                 <div class="mt-5 flex flex-row gap-3">
                     <a href="{% url 'courses:teacher-course-edit' course.id %}" class="btn btn-outline rounded-lg border-slate-300">编辑课程</a>
-                    <a href="{% url 'courses:teacher-course-preview' course.id %}" class="btn btn-outline rounded-lg border-slate-300">预览视频</a>
+                    <a href="{% url 'learning:learn-course' course.slug %}" class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
                     <a href="{% url 'courses:teacher-course-progress' course.id %}" class="btn btn-outline rounded-lg border-slate-300">学员进度</a>
                     <button type="button" class="btn btn-outline rounded-lg border-rose-200 text-rose-600" data-offline-course data-course-id="{{ course.id }}">主动下架</button>
                     <form method="post" action="{% url 'courses:teacher-course-delete' course.id %}" onsubmit="return confirm('确定要删除这门课程吗？删除后课程、章节和视频记录将一起移除。');">

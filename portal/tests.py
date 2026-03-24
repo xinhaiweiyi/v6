@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -137,111 +138,46 @@ class AdminCourseReviewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "确定要注销这个用户吗？注销后该用户将无法登录系统。")
 
-    def test_admin_comment_list_links_to_exact_comment_area(self):
-        chapter = Chapter.objects.create(course=self.published_course, title="第一章", order=1)
-        lesson = Lesson.objects.create(
-            chapter=chapter,
-            title="第一节",
-            order=1,
-            duration_seconds=120,
-            video="course_videos/test.mp4",
-        )
-        student = User.objects.create_user(
-            email="student@example.com",
-            username="学生",
+    def test_admin_cannot_deactivate_admin_account(self):
+        second_admin = User.objects.create_user(
+            email="admin2@example.com",
+            username="管理员二",
             password="StrongPass123!",
-            role=User.Role.STUDENT,
-        )
-        comment = Comment.objects.create(
-            course=self.published_course,
-            lesson=lesson,
-            user=student,
-            content="测试评论",
+            role=User.Role.ADMIN,
+            is_staff=True,
         )
         self.client.force_login(self.admin_user)
 
-        response = self.client.get(reverse("admin_panel:comments"))
+        response = self.client.post(reverse("admin_panel:user-deactivate", args=[second_admin.id]), follow=True)
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(
-            response,
-            f'{reverse("learning:learn-course", args=[self.published_course.slug])}?lesson={lesson.id}#comment-{comment.id}',
-        )
+        second_admin.refresh_from_db()
+        self.assertTrue(second_admin.is_active)
 
-    def test_admin_comment_list_hides_deleted_comments(self):
-        chapter = Chapter.objects.create(course=self.published_course, title="第二章", order=2)
-        lesson = Lesson.objects.create(
-            chapter=chapter,
-            title="第二节",
-            order=1,
-            duration_seconds=90,
-            video="course_videos/test-2.mp4",
-        )
+    def test_admin_user_list_hides_deactivate_action_for_admin(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("admin_panel:users"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "管理员不可注销")
+
+    def test_admin_user_list_shows_avatar_or_initial_and_comment_link(self):
+        self.teacher.avatar = SimpleUploadedFile("teacher-avatar.jpg", b"avatar", content_type="image/jpeg")
+        self.teacher.save(update_fields=["avatar", "updated_at"])
         student = User.objects.create_user(
-            email="student2@example.com",
-            username="学生二号",
+            email="student-initial@example.com",
+            username="小明",
             password="StrongPass123!",
             role=User.Role.STUDENT,
         )
-        visible_comment = Comment.objects.create(
-            course=self.published_course,
-            lesson=lesson,
-            user=student,
-            content="可见评论",
-        )
-        hidden_comment = Comment.objects.create(
-            course=self.published_course,
-            lesson=lesson,
-            user=student,
-            content="已删除评论",
-        )
-        hidden_comment.deleted_by = self.admin_user
-        hidden_comment.deleted_at = hidden_comment.created_at
-        hidden_comment.save(update_fields=["deleted_by", "deleted_at", "updated_at"])
         self.client.force_login(self.admin_user)
 
-        response = self.client.get(reverse("admin_panel:comments"))
+        response = self.client.get(reverse("admin_panel:users"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, visible_comment.content)
-        self.assertNotContains(response, hidden_comment.content)
-
-    def test_admin_comment_list_can_filter_by_time_range(self):
-        chapter = Chapter.objects.create(course=self.published_course, title="第三章", order=3)
-        lesson = Lesson.objects.create(
-            chapter=chapter,
-            title="第三节",
-            order=1,
-            duration_seconds=60,
-            video="course_videos/test-3.mp4",
-        )
-        student = User.objects.create_user(
-            email="student3@example.com",
-            username="学生三号",
-            password="StrongPass123!",
-            role=User.Role.STUDENT,
-        )
-        recent_comment = Comment.objects.create(
-            course=self.published_course,
-            lesson=lesson,
-            user=student,
-            content="最近评论",
-        )
-        older_comment = Comment.objects.create(
-            course=self.published_course,
-            lesson=lesson,
-            user=student,
-            content="较早评论",
-        )
-        Comment.objects.filter(pk=recent_comment.pk).update(created_at=timezone.now() - timedelta(days=1))
-        Comment.objects.filter(pk=older_comment.pk).update(created_at=timezone.now() - timedelta(days=10))
-        self.client.force_login(self.admin_user)
-
-        response = self.client.get(reverse("admin_panel:comments"), {"time_range": "7d"})
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, recent_comment.content)
-        self.assertNotContains(response, older_comment.content)
+        self.assertContains(response, self.teacher.avatar.url)
+        self.assertContains(response, "小明")
 
     def test_admin_can_delete_empty_category(self):
         empty_category = Category.objects.create(name="Design", is_active=True)
@@ -259,3 +195,29 @@ class AdminCourseReviewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
+
+    def test_admin_can_toggle_category_active_state(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("admin_panel:category-toggle", args=[self.category.id]),
+            {"is_active": "false"},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.category.refresh_from_db()
+        self.assertFalse(self.category.is_active)
+
+    def test_admin_cannot_edit_existing_category(self):
+        self.client.force_login(self.admin_user)
+
+        response = self.client.post(
+            reverse("admin_panel:category-update", args=[self.category.id]),
+            {"name": "New Name", "is_active": "on"},
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.category.refresh_from_db()
+        self.assertEqual(self.category.name, "IT")

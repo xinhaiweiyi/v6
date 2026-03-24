@@ -9,7 +9,6 @@
     <a href="{% url 'admin_panel:admin-dashboard' %}" class="dashboard-link">数据看板</a>
     <a href="{% url 'admin_panel:courses' %}" class="dashboard-link">课程审核</a>
     <a href="{% url 'admin_panel:users' %}" class="dashboard-link is-active">用户管理</a>
-    <a href="{% url 'admin_panel:comments' %}" class="dashboard-link">评论管理</a>
     <a href="{% url 'admin_panel:categories' %}" class="dashboard-link">分类管理</a>
 {% endblock %}
 
@@ -47,13 +46,28 @@
                 <tbody class="divide-y divide-slate-100 text-slate-700">
                     {% for user in users %}
                         <tr>
-                            <td class="py-3 pr-4">{{ user.username }}</td>
+                            <td class="py-3 pr-4">
+                                <div class="flex items-center gap-3 px-2 py-1">
+                                    {% if user.avatar %}
+                                        <img src="{{ user.avatar.url }}" alt="{{ user.display_name }}" class="h-10 w-10 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
+                                            {{ user.display_name|slice:":1" }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="min-w-0">
+                                        <p class="font-medium text-slate-900">{{ user.username }}</p>
+                                    </div>
+                                </div>
+                            </td>
                             <td class="py-3 pr-4">{{ user.email }}</td>
                             <td class="py-3 pr-4"><span class="badge {{ user.role|role_badge }}">{{ user.get_role_display }}</span></td>
                             <td class="py-3 pr-4">{% if user.is_active %}正常{% else %}已注销{% endif %}</td>
                             <td class="py-3 pr-4">{{ user.created_at|date:"Y-m-d H:i" }}</td>
                             <td class="py-3">
-                                {% if user.is_active %}
+                                {% if user.role == 'admin' %}
+                                    <span class="text-slate-400">管理员不可注销</span>
+                                {% elif user.is_active %}
                                     <form method="post" action="{% url 'admin_panel:user-deactivate' user.id %}" onsubmit="return confirm('确定要注销这个用户吗？注销后该用户将无法登录系统。');">
                                         {% csrf_token %}
                                         <button type="submit" class="btn btn-sm btn-outline rounded-lg border-slate-300">注销用户</button>

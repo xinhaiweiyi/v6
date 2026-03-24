@@ -1,7 +1,8 @@
 from django.contrib import messages
 from django.db.models import Count, Prefetch, Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -72,15 +73,18 @@ def learn_course(request, slug):
             Prefetch("chapters__lessons", queryset=Lesson.objects.order_by("order", "id"))
         ),
         slug=slug,
-        status=Course.Status.PUBLISHED,
     )
     enrollment = None
     if request.user.role == "student":
+        if course.status != Course.Status.PUBLISHED:
+            raise Http404("课程不存在。")
         enrollment = get_object_or_404(
             Enrollment.objects.select_related("last_lesson"),
             student=request.user,
             course=course,
         )
+    elif request.user.role == "teacher" and course.status != Course.Status.PUBLISHED and course.teacher_id != request.user.id:
+        raise Http404("课程不存在。")
     lessons = [lesson for chapter in course.chapters.all() for lesson in chapter.lessons.all()]
     lesson_id = request.GET.get("lesson")
     active_lesson = next((lesson for lesson in lessons if str(lesson.id) == lesson_id), None)
@@ -103,6 +107,12 @@ def learn_course(request, slug):
 
     back_url = role_home_url(request.user)
     back_label = "返回我的课程" if request.user.role == "student" else "返回我的主页"
+    if request.user.role == "teacher" and course.teacher_id == request.user.id:
+        back_url = reverse("courses:teacher-courses")
+        back_label = "返回课程管理"
+    elif request.user.role == "admin":
+        back_url = reverse("admin_panel:courses")
+        back_label = "返回课程审核"
 
     root_comments = (
         Comment.objects.filter(course=course, lesson=active_lesson, parent=None, deleted_at__isnull=True)
@@ -212,4 +222,11 @@ def delete_comment(request, comment_id):
     comment.deleted_by = request.user
     comment.delete_reason = request.POST.get("reason", "内容违规")
     comment.save(update_fields=["deleted_at", "deleted_by", "delete_reason", "updated_at"])
-    return JsonResponse({"ok": True, "message": "评论已删除。"})
+    return JsonResponse(
+        {
+            "ok": True,
+            "message": "评论已删除。",
+            "deleted_by": request.user.display_name,
+            "deleted_at": comment.deleted_at.strftime("%Y-%m-%d %H:%M"),
+        }
+    )

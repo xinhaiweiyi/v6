@@ -1,104 +1,108 @@
 {% extends 'base.html' %}
-
 {% block title %}课程广场 | 在线视频学习系统{% endblock %}
-
 {% block content %}
-<section class="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 ">
-    <div
-        class="grid gap-6 rounded-[28px] border border-sky-100 bg-gradient-to-br from-white via-sky-50 to-emerald-50 p-8 shadow-soft lg:grid-cols-[1.5fr_1fr]">
-        <div class="space-y-5 flex  justify-center flex-col ">
-            <div class="space-y-3">
-                <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">开启你的高效学习之旅</h1>
-                <p class="max-w-2xl text-base leading-7 text-slate-600">海量优质课程，随时随地在线学习，助你快速掌握新技能，实现自我提升。</p>
+    <section class="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8 ">
+        <div class="grid gap-6 rounded-[28px] border border-sky-100 bg-gradient-to-br from-white via-sky-50 to-emerald-50 p-8 shadow-soft lg:grid-cols-[1.5fr_1fr]">
+            <div class="space-y-5 flex  justify-center flex-col ">
+                <div class="space-y-3">
+                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900 sm:text-4xl">开启你的高效学习之旅</h1>
+                    <p class="max-w-2xl text-base leading-7 text-slate-600">海量优质课程，随时随地在线学习，助你快速掌握新技能，实现自我提升。</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <a href="#course-list" class="btn btn-primary rounded-lg text-white">开始选课</a>
+                    {% if request.user.is_authenticated %}
+                        <a href="{% url 'portal:role-home' %}"
+                           class="btn btn-outline rounded-lg border-slate-300">进入我的主页</a>
+                    {% else %}
+                        <a href="{% url 'accounts:register' %}"
+                           class="btn btn-outline rounded-lg border-slate-300">注册账号</a>
+                    {% endif %}
+                </div>
             </div>
-            <div class="flex flex-wrap gap-3">
-                <a href="#course-list" class="btn btn-primary rounded-lg text-white">开始选课</a>
-                {% if request.user.is_authenticated %}
-                <a href="{% url 'portal:role-home' %}" class="btn btn-outline rounded-lg border-slate-300">进入我的主页</a>
-                {% else %}
-                <a href="{% url 'accounts:register' %}" class="btn btn-outline rounded-lg border-slate-300">注册账号</a>
-                {% endif %}
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div class="place-content-center rounded-2xl border border-white/70 bg-white/80 p-5 shadow-soft">
+                    <p class="text-sm text-slate-500">可选课程</p>
+                    <p class="mt-3 text-3xl font-semibold text-slate-900">{{ courses|length }}</p>
+                    <p class="mt-2 text-sm text-slate-500">已发布课程可直接浏览详情并加入学习</p>
+                </div>
+                <div class="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-soft">
+                    <p class="text-sm text-slate-500">分类筛选</p>
+                    <p class="mt-3 text-3xl font-semibold text-slate-900">{{ categories|length }}</p>
+                    <p class="mt-2 text-sm text-slate-500">覆盖 IT、外语、设计等常见分类</p>
+                </div>
             </div>
         </div>
-        <div class="grid gap-4 sm:grid-cols-2">
-            <div class="place-content-center rounded-2xl border border-white/70 bg-white/80 p-5 shadow-soft">
-                <p class="text-sm text-slate-500">可选课程</p>
-                <p class="mt-3 text-3xl font-semibold text-slate-900">{{ courses|length }}</p>
-                <p class="mt-2 text-sm text-slate-500">已发布课程可直接浏览详情并加入学习</p>
-            </div>
-            <div class="rounded-2xl border border-white/70 bg-white/80 p-5 shadow-soft">
-                <p class="text-sm text-slate-500">分类筛选</p>
-                <p class="mt-3 text-3xl font-semibold text-slate-900">{{ categories|length }}</p>
-                <p class="mt-2 text-sm text-slate-500">覆盖 IT、外语、设计等常见分类</p>
-            </div>
-
+    </section>
+    <section id="course-list"
+             class="mx-auto max-w-[1400px] px-4 pb-10 sm:px-6 lg:px-8">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+            <form method="get"
+                  class="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_140px]">
+                <label class="form-control">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">课程分类</span>
+                    <select name="category"
+                            class="input input-bordered h-11 rounded-lg border-slate-200 bg-white">
+                        <option value="">全部分类</option>
+                        {% for category in categories %}
+                            <option value="{{ category.slug }}"
+                                    {% if selected_category == category.slug %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="form-control">
+                    <span class="mb-2 block text-sm font-medium text-slate-700">关键词搜索</span>
+                    <input type="text"
+                           name="keyword"
+                           value="{{ keyword }}"
+                           class="input input-bordered h-11 rounded-lg border-slate-200 bg-white"
+                           placeholder="请输入课程名或简介关键词">
+                </label>
+                <button type="submit" class="btn btn-primary mt-7 h-11 rounded-lg text-white">筛选课程</button>
+            </form>
         </div>
-    </div>
-</section>
-
-<section id="course-list" class="mx-auto max-w-[1400px] px-4 pb-10 sm:px-6 lg:px-8">
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-        <form method="get" class="grid gap-4 lg:grid-cols-[200px_minmax(0,1fr)_140px]">
-            <label class="form-control">
-                <span class="mb-2 block text-sm font-medium text-slate-700">课程分类</span>
-                <select name="category" class="input input-bordered h-11 rounded-lg border-slate-200 bg-white">
-                    <option value="">全部分类</option>
-                    {% for category in categories %}
-                    <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>
-                        {{ category.name }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <label class="form-control">
-                <span class="mb-2 block text-sm font-medium text-slate-700">关键词搜索</span>
-                <input type="text" name="keyword" value="{{ keyword }}"
-                    class="input input-bordered h-11 rounded-lg border-slate-200 bg-white" placeholder="请输入课程名或简介关键词">
-            </label>
-            <button type="submit" class="btn btn-primary mt-7 h-11 rounded-lg text-white">筛选课程</button>
-        </form>
-    </div>
-
-    <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {% for course in courses %}
-        <article
-            class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-card">
-            <div class="aspect-[16/9] bg-slate-100">
-                {% if course.cover %}
-                <img src="{{ course.cover.url }}" alt="{{ course.title }}" class="h-full w-full object-cover">
-                {% else %}
-                <div
-                    class="flex h-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-lg font-semibold text-sky-700">
-                    {{ course.category.name }}</div>
-                {% endif %}
-            </div>
-            <div class="space-y-4 p-5">
-                <div class="flex items-center justify-between gap-3">
-                    <span
-                        class="rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">{{ course.category.name }}</span>
-                    <span class="text-xs text-slate-400">{{ course.created_at|date:"Y-m-d" }}</span>
+        <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {% for course in courses %}
+                <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-card">
+                    <div class="aspect-[16/9] bg-slate-100">
+                        {% if course.cover %}
+                            <img src="{{ course.cover.url }}"
+                                 alt="{{ course.title }}"
+                                 class="h-full w-full object-cover">
+                        {% else %}
+                            <div class="flex h-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-lg font-semibold text-sky-700">
+                                {{ course.category.name }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="space-y-4 p-5">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">{{ course.category.name }}</span>
+                            <span class="text-xs text-slate-400">{{ course.created_at|date:"Y-m-d" }}</span>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-semibold text-slate-900">{{ course.title }}</h2>
+                            <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{{ course.description }}</p>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-slate-500">
+                            <span>老师：{{ course.teacher.username }}</span>
+                            <span>{{ course.total_lessons }} 节视频</span>
+                        </div>
+                        {% if request.user.is_authenticated and request.user.role != 'student' %}
+                            <a href="{% url 'learning:learn-course' course.slug %}"
+                               class="btn btn-outline w-full rounded-lg border-slate-300">进入课程观看</a>
+                        {% else %}
+                            <a href="{% url 'portal:course-detail' course.slug %}"
+                               class="btn btn-outline w-full rounded-lg border-slate-300">查看课程详情</a>
+                        {% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500 md:col-span-2 xl:col-span-3">
+                    暂无符合条件的课程，请尝试更换搜索关键词或分类。
                 </div>
-                <div>
-                    <h2 class="text-lg font-semibold text-slate-900">{{ course.title }}</h2>
-                    <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{{ course.description }}</p>
-                </div>
-                <div class="flex items-center justify-between text-sm text-slate-500">
-                    <span>老师：{{ course.teacher.username }}</span>
-                    <span>{{ course.total_lessons }} 节视频</span>
-                </div>
-                {% if request.user.is_authenticated and request.user.role != 'student' %}
-                <a href="{% url 'learning:learn-course' course.slug %}"
-                    class="btn btn-outline w-full rounded-lg border-slate-300">进入课程观看</a>
-                {% else %}
-                <a href="{% url 'portal:course-detail' course.slug %}"
-                    class="btn btn-outline w-full rounded-lg border-slate-300">查看课程详情</a>
-                {% endif %}
-            </div>
-        </article>
-        {% empty %}
-        <div
-            class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500 md:col-span-2 xl:col-span-3">
-            暂无符合条件的课程，请尝试更换搜索关键词或分类。</div>
-        {% endfor %}
-    </div>
-</section>
+            {% endfor %}
+        </div>
+    </section>
 {% endblock %}

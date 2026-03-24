@@ -8,7 +8,7 @@ class CommentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["content"].widget.attrs.setdefault(
             "class",
-            "textarea textarea-bordered min-h-[120px] w-full rounded-2xl border-slate-200 bg-white",
+            "textarea textarea-bordered  min-h-[40px] w-full rounded-2xl border-slate-200 bg-white",
         )
 
     class Meta:

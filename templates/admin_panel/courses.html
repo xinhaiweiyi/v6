@@ -9,7 +9,6 @@
 <a href="{% url 'admin_panel:admin-dashboard' %}" class="dashboard-link">数据看板</a>
 <a href="{% url 'admin_panel:courses' %}" class="dashboard-link is-active">课程审核</a>
 <a href="{% url 'admin_panel:users' %}" class="dashboard-link">用户管理</a>
-<a href="{% url 'admin_panel:comments' %}" class="dashboard-link">评论管理</a>
 <a href="{% url 'admin_panel:categories' %}" class="dashboard-link">分类管理</a>
 {% endblock %}
 
@@ -72,8 +71,8 @@
                 </div>
             </div>
             <div class="flex flex-1/2 flex-nowrap gap-3 justify-end">
-                <a href="{% url 'admin_panel:course-preview' course.id %}"
-                    class="btn btn-outline rounded-lg border-slate-300">预览视频</a>
+                <a href="{% url 'learning:learn-course' course.slug %}"
+                    class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
                 <button type="button" class="btn btn-primary rounded-lg text-white" data-course-action="approve"
                     data-course-id="{{ course.id }}">审核通过</button>
                 <button type="button" class="btn btn-outline rounded-lg border-slate-300" data-course-action="reject"

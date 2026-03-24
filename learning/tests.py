@@ -119,6 +119,26 @@ class LearningFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.lesson.title)
 
+    def test_teacher_can_open_own_unpublished_course_without_separate_preview_page(self):
+        self.course.status = Course.Status.PENDING
+        self.course.save(update_fields=["status", "updated_at"])
+        self.client.force_login(self.teacher)
+
+        response = self.client.get(reverse("learning:learn-course", args=[self.course.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.course.title)
+
+    def test_admin_can_open_unpublished_course_without_separate_preview_page(self):
+        self.course.status = Course.Status.PENDING
+        self.course.save(update_fields=["status", "updated_at"])
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("learning:learn-course", args=[self.course.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.lesson.title)
+
     def test_learning_page_uses_non_overlapping_player_layout(self):
         self.client.force_login(self.student)
         Enrollment.objects.create(student=self.student, course=self.course)

@@ -1,28 +1,6 @@
 {% extends 'base.html' %}
 {% load portal_tags %}
 {% block title %}{{ course.title }} | 学习中{% endblock %}
-{% block extra_head %}
-    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet">
-    <style>
-    .learning-player-shell {
-        position: relative;
-        overflow: hidden;
-        border-radius: 1rem;
-        background: #020617;
-        aspect-ratio: 16 / 9;
-    }
-
-    .learning-player-shell .video-js {
-        width: 100%;
-        height: 100%;
-    }
-
-    .learning-player-shell .vjs-tech,
-    .learning-player-shell .vjs-poster {
-        object-fit: contain;
-    }
-    </style>
-{% endblock %}
 {% block content %}
     <section class="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8">
         <div class="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -38,17 +16,20 @@
                 <div class="rounded-[24px] border border-slate-200 bg-white p-4 shadow-soft">
                     {% if active_lesson %}
                         <div class="learning-player-shell">
-                            <video id="learning-player"
-                                   class="video-js vjs-big-play-centered h-full w-full"
-                                   controls
-                                   preload="auto"
-                                   data-setup="{}"
-                                   data-start-seconds="{{ start_seconds }}"
-                                   {% if enrollment %}data-enrollment-id="{{ enrollment.id }}"{% endif %}
-                                   data-lesson-id="{{ active_lesson.id }}">
-                                <source src="{{ active_lesson.video.url }}" type="video/mp4">
-                                您的浏览器暂不支持视频播放。
-                            </video>
+                            <video-player>
+                                <video-skin>
+                                    <video id="learning-player"
+                                           class="video-js vjs-big-play-centered h-full w-full"
+                                           preload="auto"
+                                           data-setup="{}"
+                                           data-start-seconds="{{ start_seconds }}"
+                                           {% if enrollment %}data-enrollment-id="{{ enrollment.id }}"{% endif %}
+                                           data-lesson-id="{{ active_lesson.id }}">
+                                        <source src="{{ active_lesson.video.url }}" type="video/mp4">
+                                        您的浏览器暂不支持视频播放。
+                                    </video>
+                                </video-skin>
+                            </video-player>
                         </div>
                         <div class="mt-4">
                             <h2 class="text-lg font-semibold text-slate-900">{{ active_lesson.title }}</h2>
@@ -190,7 +171,8 @@
     </section>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script type="module"
+            src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video.js"></script>
     <script>
     const playerElement = document.getElementById('learning-player');
     if (playerElement) {

@@ -59,19 +59,12 @@ def role_home(request):
 
 @role_required("teacher")
 def teacher_dashboard(request):
-    courses = Course.objects.filter(teacher=request.user).select_related("category")
-    stats = {
-        "total_courses": courses.count(),
-        "pending_courses": courses.filter(status=Course.Status.PENDING).count(),
-        "published_courses": courses.filter(status=Course.Status.PUBLISHED).count(),
-        "comments": Comment.objects.filter(course__teacher=request.user, deleted_at__isnull=True).count(),
-    }
     comments = (
         Comment.objects.filter(course__teacher=request.user, deleted_at__isnull=True)
         .select_related("user", "course", "lesson")
         .order_by("-created_at")[:10]
     )
-    return render(request, "teacher/dashboard.html", {"stats": stats, "comments": comments})
+    return render(request, "teacher/dashboard.html", {"comments": comments})
 
 
 @role_required("admin")

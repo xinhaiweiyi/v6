@@ -1,106 +1,83 @@
 import math
-import struct
-
-
-CONTAINER_BOX_TYPES = {
-    b"moov",
-    b"trak",
-    b"mdia",
-    b"minf",
-    b"stbl",
-    b"edts",
-    b"udta",
-    b"dinf",
-}
+import os
+import tempfile
 
 
 def extract_video_duration_seconds(file_obj):
-    duration = _extract_mp4_duration_seconds(file_obj)
-    return duration or 0
-
-
-def _extract_mp4_duration_seconds(file_obj):
     if not hasattr(file_obj, "read") or not hasattr(file_obj, "seek"):
         return 0
 
+    original_position = None
+    temp_path = None
+    clip = None
     try:
         original_position = file_obj.tell()
-        file_obj.seek(0, 2)
-        file_size = file_obj.tell()
-        file_obj.seek(0)
-        return _find_mvhd_duration(file_obj, file_size) or 0
-    except (OSError, ValueError, struct.error):
+        clip_class = _load_video_clip_class()
+        if clip_class is None:
+            return 0
+        video_path, temp_path = _resolve_video_path(file_obj)
+        clip = clip_class(video_path)
+        duration = getattr(clip, "duration", 0) or 0
+        return max(1, math.ceil(duration)) if duration > 0 else 0
+    except Exception:
         return 0
     finally:
+        if clip is not None:
+            clip.close()
+        if temp_path:
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
+        if original_position is not None:
+            try:
+                file_obj.seek(original_position)
+            except (OSError, ValueError):
+                pass
+
+
+def _load_video_clip_class():
+    try:
+        from moviepy import VideoFileClip
+
+        return VideoFileClip
+    except ImportError:
         try:
-            file_obj.seek(original_position)
-        except (OSError, ValueError, UnboundLocalError):
+            from moviepy.editor import VideoFileClip
+
+            return VideoFileClip
+        except ImportError:
+            return None
+
+
+def _resolve_video_path(file_obj):
+    if hasattr(file_obj, "temporary_file_path"):
+        try:
+            return file_obj.temporary_file_path(), None
+        except Exception:
             pass
 
+    file_name = getattr(file_obj, "name", "")
+    if file_name and os.path.exists(file_name):
+        return file_name, None
 
-def _find_mvhd_duration(file_obj, end_pos):
-    while file_obj.tell() < end_pos:
-        box_start = file_obj.tell()
-        box_size, box_type, header_size = _read_box_header(file_obj, end_pos)
-        if not box_size or box_size < header_size:
-            return 0
-
-        box_end = min(box_start + box_size, end_pos)
-        if box_type == b"mvhd":
-            return _parse_mvhd_box(file_obj)
-        if box_type in CONTAINER_BOX_TYPES:
-            duration = _find_mvhd_duration(file_obj, box_end)
-            if duration:
-                return duration
-        file_obj.seek(box_end)
-    return 0
+    suffix = os.path.splitext(file_name)[1] or ".mp4"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+        file_obj.seek(0)
+        for chunk in _iter_file_chunks(file_obj):
+            temp_file.write(chunk)
+        temp_path = temp_file.name
+    return temp_path, temp_path
 
 
-def _read_box_header(file_obj, end_pos):
-    remaining = end_pos - file_obj.tell()
-    if remaining < 8:
-        return 0, None, 0
+def _iter_file_chunks(file_obj, chunk_size=1024 * 1024):
+    chunks = getattr(file_obj, "chunks", None)
+    if callable(chunks):
+        yield from chunks()
+        return
 
-    header = file_obj.read(8)
-    box_size, box_type = struct.unpack(">I4s", header)
-    header_size = 8
-
-    if box_size == 1:
-        if end_pos - file_obj.tell() < 8:
-            return 0, None, 0
-        box_size = struct.unpack(">Q", file_obj.read(8))[0]
-        header_size = 16
-    elif box_size == 0:
-        box_size = end_pos - (file_obj.tell() - header_size)
-
-    return box_size, box_type, header_size
-
-
-def _parse_mvhd_box(file_obj):
-    version_data = file_obj.read(1)
-    if len(version_data) != 1:
-        return 0
-
-    version = version_data[0]
-    file_obj.read(3)
-
-    if version == 1:
-        file_obj.read(16)
-        timescale_data = file_obj.read(4)
-        duration_data = file_obj.read(8)
-        if len(timescale_data) != 4 or len(duration_data) != 8:
-            return 0
-        timescale = struct.unpack(">I", timescale_data)[0]
-        duration = struct.unpack(">Q", duration_data)[0]
-    else:
-        file_obj.read(8)
-        timescale_data = file_obj.read(4)
-        duration_data = file_obj.read(4)
-        if len(timescale_data) != 4 or len(duration_data) != 4:
-            return 0
-        timescale = struct.unpack(">I", timescale_data)[0]
-        duration = struct.unpack(">I", duration_data)[0]
-
-    if not timescale or not duration:
-        return 0
-    return max(1, math.ceil(duration / timescale))
+    while True:
+        chunk = file_obj.read(chunk_size)
+        if not chunk:
+            break
+        yield chunk

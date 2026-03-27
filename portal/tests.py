@@ -67,21 +67,20 @@ class TeacherDashboardTests(TestCase):
             content="老师你好",
         )
 
-    def test_teacher_dashboard_shows_all_stat_cards(self):
+    def test_teacher_dashboard_shows_latest_comments_only(self):
         self.client.force_login(self.teacher)
 
         response = self.client.get(reverse("portal:teacher-dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "课程总数")
-        self.assertContains(response, "待审核课程")
-        self.assertContains(response, "已发布课程")
-        self.assertContains(response, "评论数")
-        self.assertContains(response, self.pending_course.title)
-        self.assertEqual(response.context["stats"]["total_courses"], 2)
-        self.assertEqual(response.context["stats"]["pending_courses"], 1)
-        self.assertEqual(response.context["stats"]["published_courses"], 1)
-        self.assertEqual(response.context["stats"]["comments"], 1)
+        self.assertNotContains(response, "课程总数")
+        self.assertNotContains(response, "待审核课程")
+        self.assertNotContains(response, "评论数")
+        self.assertContains(response, "最新评论")
+        self.assertContains(response, self.published_course.title)
+        self.assertContains(response, "老师你好")
+        self.assertNotIn("stats", response.context)
+        self.assertEqual(len(response.context["comments"]), 1)
 
 
 class AdminCourseReviewTests(TestCase):

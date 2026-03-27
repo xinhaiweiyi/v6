@@ -1,26 +1,11 @@
-import struct
-
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 
 from accounts.models import User
 from courses.models import Category, Chapter, Course, Lesson
 from learning.models import Enrollment, LessonProgress
-
-
-def make_mp4_with_duration(seconds, timescale=1000):
-    def make_box(box_type, payload):
-        return struct.pack(">I4s", len(payload) + 8, box_type) + payload
-
-    mvhd_payload = (
-        b"\x00\x00\x00\x00"
-        + struct.pack(">II", 0, 0)
-        + struct.pack(">II", timescale, seconds * timescale)
-        + b"\x00" * 80
-    )
-    ftyp_payload = b"isom" + struct.pack(">I", 0) + b"isomiso2mp41"
-    return make_box(b"ftyp", ftyp_payload) + make_box(b"moov", make_box(b"mvhd", mvhd_payload))
 
 
 class CourseReviewTests(TestCase):
@@ -83,17 +68,18 @@ class CourseReviewTests(TestCase):
         chapter = Chapter.objects.get(course=self.course, title="第二章")
         self.assertEqual(chapter.order, 2)
 
-        response = self.client.post(
-            reverse("courses:lesson-create", args=[chapter.id]),
-            {
-                "title": "新视频",
-                "video": SimpleUploadedFile(
-                    "next.mp4",
-                    make_mp4_with_duration(90),
-                    content_type="video/mp4",
-                ),
-            },
-        )
+        with patch("courses.models.extract_video_duration_seconds", return_value=90):
+            response = self.client.post(
+                reverse("courses:lesson-create", args=[chapter.id]),
+                {
+                    "title": "新视频",
+                    "video": SimpleUploadedFile(
+                        "next.mp4",
+                        b"real-video-content-is-not-needed-for-this-test",
+                        content_type="video/mp4",
+                    ),
+                },
+            )
         self.assertEqual(response.status_code, 302)
         lesson = Lesson.objects.get(chapter=chapter, title="新视频")
         self.assertEqual(lesson.order, 1)

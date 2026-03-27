@@ -17,6 +17,6 @@ class LessonProgressAdmin(admin.ModelAdmin):
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
-    list_display = ["user", "course", "lesson", "parent", "deleted_at", "created_at"]
+    list_display = ["id", "content", "user", "course", "lesson", "parent", "deleted_at", "created_at"]
     search_fields = ["content", "user__username", "course__title"]
     list_filter = ["deleted_at", "course"]

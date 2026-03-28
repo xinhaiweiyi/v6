@@ -71,29 +71,31 @@
                                 <button type="submit"
                                         class="btn btn-outline h-11 rounded-lg border-slate-300">保存分类</button>
                             </form>
-                            {% if course.review_note %}
-                                <div class="mt-3 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">审核备注：{{ course.review_note }}</div>
-                            {% endif %}
-                            {% if course.offline_reason %}
-                                <div class="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">下架原因：{{ course.offline_reason }}</div>
-                            {% endif %}
                         </div>
                     </div>
-                    <div class="flex flex-1/2 flex-nowrap gap-3 justify-end">
-                        <a href="{% url 'learning:learn-course' course.slug %}"
-                           class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
-                        <button type="button"
-                                class="btn btn-primary rounded-lg text-white"
-                                data-course-action="approve"
-                                data-course-id="{{ course.id }}">审核通过</button>
-                        <button type="button"
-                                class="btn btn-outline rounded-lg border-slate-300"
-                                data-course-action="reject"
-                                data-course-id="{{ course.id }}">驳回</button>
-                        <button type="button"
-                                class="btn btn-outline rounded-lg border-rose-200 text-rose-600"
-                                data-course-action="offline"
-                                data-course-id="{{ course.id }}">下架课程</button>
+                    <div class="flex w-full max-w-md flex-col gap-3 lg:w-auto lg:min-w-[320px]">
+                        <div class="flex flex-wrap justify-end gap-3">
+                            <a href="{% url 'learning:learn-course' course.slug %}"
+                               class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
+                            <button type="button"
+                                    class="btn btn-primary rounded-lg text-white"
+                                    data-course-action="approve"
+                                    data-course-id="{{ course.id }}">审核通过</button>
+                            <button type="button"
+                                    class="btn btn-outline rounded-lg border-slate-300"
+                                    data-course-action="reject"
+                                    data-course-id="{{ course.id }}">驳回</button>
+                            <button type="button"
+                                    class="btn btn-outline rounded-lg border-rose-200 text-rose-600"
+                                    data-course-action="offline"
+                                    data-course-id="{{ course.id }}">下架课程</button>
+                        </div>
+                        {% if course.review_note %}
+                            <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600 lg:text-left">审核备注：{{ course.review_note }}</div>
+                        {% endif %}
+                        {% if course.offline_reason %}
+                            <div class="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700 lg:text-left">下架原因：{{ course.offline_reason }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </article>

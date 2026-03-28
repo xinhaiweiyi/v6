@@ -1508,6 +1508,9 @@
   .w-44 {
     width: calc(var(--spacing) * 44);
   }
+  .w-\[300px\] {
+    width: 300px;
+  }
   .w-full {
     width: 100%;
   }
@@ -1650,6 +1653,11 @@
   }
   .justify-self-start {
     justify-self: flex-start;
+  }
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .overflow-hidden {
     overflow: hidden;

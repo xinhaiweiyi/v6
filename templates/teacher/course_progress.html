@@ -1,23 +1,24 @@
 {% extends 'base_dashboard.html' %}
-
 {% block title %}学员进度 | 在线视频学习系统{% endblock %}
 {% block sidebar_title %}学习进度{% endblock %}
 {% block sidebar_desc %}查看课程下每位学生的学习进度与最近学习情况。{% endblock %}
-
 {% block sidebar %}
     <a href="{% url 'portal:teacher-dashboard' %}" class="dashboard-link">工作台</a>
-    <a href="{% url 'courses:teacher-courses' %}" class="dashboard-link is-active">课程管理</a>
-    <a href="{% url 'courses:teacher-course-create' %}" class="dashboard-link">新建课程</a>
+    <a href="{% url 'courses:teacher-courses' %}"
+       class="dashboard-link is-active">课程管理</a>
+    <a href="{% url 'courses:teacher-course-create' %}"
+       class="dashboard-link">新建课程</a>
     <a href="{% url 'accounts:profile' %}" class="dashboard-link">账号信息</a>
 {% endblock %}
-
 {% block dashboard_content %}
     <section class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft lg:p-7">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div class="flex gap-4">
                 <div class="h-28 w-44 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
                     {% if course.cover %}
-                        <img src="{{ course.cover.url }}" alt="{{ course.title }}" class="h-full w-full object-cover">
+                        <img src="{{ course.cover.url }}"
+                             alt="{{ course.title }}"
+                             class="h-full w-full object-cover">
                     {% else %}
                         <div class="flex h-full items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-sky-900 text-sm font-medium tracking-[0.2em] text-white/80">
                             COURSE
@@ -30,18 +31,20 @@
                     <p class="mt-2 text-sm text-slate-500">查看已加入该课程学生的完成度、最近学习视频和学习时间。</p>
                 </div>
             </div>
-            <a href="{% url 'courses:teacher-courses' %}" class="btn btn-outline rounded-lg border-slate-300">返回课程管理</a>
+            <a href="{% url 'courses:teacher-courses' %}"
+               class="btn btn-outline rounded-lg border-slate-300">返回课程管理</a>
         </div>
-
-        <form method="get" class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <select name="ordering" class="select select-bordered h-11 w-full max-w-xs rounded-lg border-slate-200 bg-white">
+        <form method="get"
+              class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <select name="ordering"
+                    class="select select-bordered h-11 w-full max-w-xs rounded-lg border-slate-200 bg-white">
                 {% for value, label in ordering_choices %}
                     <option value="{{ value }}" {% if ordering == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn btn-outline h-11 rounded-lg border-slate-300">排序</button>
+            <button type="submit"
+                    class="btn btn-outline h-11 rounded-lg border-slate-300">排序</button>
         </form>
-
         <div class="mt-6 space-y-4">
             {% for enrollment in enrollments %}
                 <article class="rounded-[24px] border border-slate-200 p-5">
@@ -49,7 +52,9 @@
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-3">
                                 {% if enrollment.student.avatar %}
-                                    <img src="{{ enrollment.student.avatar.url }}" alt="{{ enrollment.student.display_name }}" class="h-10 w-10 rounded-full object-cover">
+                                    <img src="{{ enrollment.student.avatar.url }}"
+                                         alt="{{ enrollment.student.display_name }}"
+                                         class="h-10 w-10 rounded-full object-cover">
                                 {% else %}
                                     <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
                                         {{ enrollment.student.display_name|slice:":1" }}
@@ -66,14 +71,29 @@
                                     <span class="font-semibold text-sky-700">{{ enrollment.progress_percent }}%</span>
                                 </div>
                                 <div class="h-2.5 rounded-full bg-slate-100">
-                                    <div class="h-full rounded-full bg-gradient-to-r from-sky-500 to-emerald-500" style="width: {{ enrollment.progress_percent }}%;"></div>
+                                    <div class="h-full rounded-full bg-sky-500"
+                                         style="width: {{ enrollment.progress_percent }}%"></div>
                                 </div>
-                                <p class="text-xs text-slate-400">已完成 {{ enrollment.completed_lessons_count }}/{{ enrollment.total_lessons_count }} 节视频</p>
+                                <p class="text-xs text-slate-400">
+                                    已完成 {{ enrollment.completed_lessons_count }}/{{ enrollment.total_lessons_count }} 节视频
+                                </p>
                             </div>
                         </div>
                         <div class="min-w-[220px] rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                            <p>{% if enrollment.last_lesson %}最近学习：{{ enrollment.last_lesson.title }}{% else %}尚未开始学习{% endif %}</p>
-                            <p class="mt-2">{% if enrollment.last_learned_at %}最近时间：{{ enrollment.last_learned_at|date:"Y-m-d H:i" }}{% else %}最近时间：暂无{% endif %}</p>
+                            <p>
+                                {% if enrollment.last_lesson %}
+                                    最近学习：{{ enrollment.last_lesson.title }}
+                                {% else %}
+                                    尚未开始学习
+                                {% endif %}
+                            </p>
+                            <p class="mt-2">
+                                {% if enrollment.last_learned_at %}
+                                    最近时间：{{ enrollment.last_learned_at|date:"Y-m-d H:i" }}
+                                {% else %}
+                                    最近时间：暂无
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                 </article>

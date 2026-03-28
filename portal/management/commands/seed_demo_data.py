@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -50,7 +52,8 @@ class Command(BaseCommand):
         self.stdout.write("")
         self.stdout.write(
             f"共准备：{created['category_count']} 个分类，{created['course_count']} 门课程，"
-            f"{created['enrollment_count']} 条选课记录，{created['comment_count']} 条评论。"
+            f"{created['enrollment_count']} 条选课记录，{created['progress_count']} 条课时进度，"
+            f"{created['comment_count']} 条评论。"
         )
         self.stdout.write("说明：测试视频为占位文件，主要用于功能演示，不是可播放的真实教学视频。")
 
@@ -64,6 +67,7 @@ class Command(BaseCommand):
             "category_count": len(categories),
             "course_count": len(courses),
             "enrollment_count": enrollments["enrollment_count"],
+            "progress_count": enrollments["progress_count"],
             "comment_count": enrollments["comment_count"],
         }
 
@@ -269,29 +273,71 @@ class Command(BaseCommand):
         students = list(User.objects.filter(role=User.Role.STUDENT).order_by("email"))
         published_courses = [course for course in courses if course.status == Course.Status.PUBLISHED]
         enrollment_count = 0
+        progress_count = 0
         comment_count = 0
 
         for student_index, student in enumerate(students):
-            for course in published_courses[:2]:
+            for course_index, course in enumerate(published_courses[:2]):
                 enrollment, created = Enrollment.objects.get_or_create(
                     student=student,
                     course=course,
                 )
                 enrollment_count += 1 if created else 0
-                lesson = Lesson.objects.filter(chapter__course=course).order_by("chapter__order", "order").first()
-                if lesson:
-                    enrollment.last_lesson = lesson
-                    enrollment.last_position_seconds = 30 + student_index * 15
-                    enrollment.last_learned_at = timezone.now()
-                    enrollment.save()
+                course_lessons = list(
+                    Lesson.objects.filter(chapter__course=course).order_by("chapter__order", "order", "id")
+                )
+                if not course_lessons:
+                    continue
+
+                # 为每个选课生成“已完成 + 进行中”的多课时进度，模拟真实学习轨迹。
+                completed_target = min(len(course_lessons), 1 + (student_index % 3))
+                in_progress_index = completed_target if completed_target < len(course_lessons) else None
+
+                target_progress = {}
+                for idx, lesson in enumerate(course_lessons):
+                    if idx < completed_target:
+                        target_progress[lesson.id] = (max(lesson.duration_seconds, 60), True)
+                    elif in_progress_index is not None and idx == in_progress_index:
+                        progress_seconds = max(30, int((lesson.duration_seconds or 180) * 0.45))
+                        target_progress[lesson.id] = (progress_seconds, False)
+
+                for lesson in course_lessons:
+                    if lesson.id not in target_progress:
+                        LessonProgress.objects.filter(enrollment=enrollment, lesson=lesson).delete()
+                        continue
+
+                    position_seconds, completed = target_progress[lesson.id]
                     progress, progress_created = LessonProgress.objects.get_or_create(
                         enrollment=enrollment,
                         lesson=lesson,
-                        defaults={"last_position_seconds": enrollment.last_position_seconds},
+                        defaults={
+                            "last_position_seconds": position_seconds,
+                            "completed": completed,
+                        },
                     )
-                    if not progress_created:
-                        progress.last_position_seconds = enrollment.last_position_seconds
-                        progress.save(update_fields=["last_position_seconds", "updated_at"])
+                    progress_count += 1 if progress_created else 0
+                    if (
+                        progress.last_position_seconds != position_seconds
+                        or progress.completed != completed
+                    ):
+                        progress.last_position_seconds = position_seconds
+                        progress.completed = completed
+                        progress.save(update_fields=["last_position_seconds", "completed", "updated_at"])
+
+                if in_progress_index is not None:
+                    last_lesson = course_lessons[in_progress_index]
+                else:
+                    last_lesson = course_lessons[completed_target - 1]
+                last_position_seconds = target_progress[last_lesson.id][0]
+                enrollment.last_lesson = last_lesson
+                enrollment.last_position_seconds = last_position_seconds
+                enrollment.last_learned_at = timezone.now() - timedelta(
+                    days=student_index,
+                    hours=course_index * 2,
+                )
+                enrollment.save(
+                    update_fields=["last_lesson", "last_position_seconds", "last_learned_at"]
+                )
 
         comment_samples = [
             ("student1@demo.com", "Python 零基础入门", "老师讲得很清楚，适合入门。"),
@@ -323,4 +369,14 @@ class Command(BaseCommand):
                 )
                 comment_count += 1 if reply_created else 0
 
-        return {"enrollment_count": enrollment_count, "comment_count": comment_count}
+        total_progress = LessonProgress.objects.filter(
+            enrollment__student__role=User.Role.STUDENT,
+            enrollment__course__status=Course.Status.PUBLISHED,
+            enrollment__course__in=published_courses[:2],
+        ).count()
+
+        return {
+            "enrollment_count": enrollment_count,
+            "progress_count": max(progress_count, total_progress),
+            "comment_count": comment_count,
+        }

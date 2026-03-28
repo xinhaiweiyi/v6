@@ -19,9 +19,9 @@
                             <video-player>
                                 <video-skin>
                                     <video id="learning-player"
-                                           class="video-js vjs-big-play-centered h-full w-full"
+                                           class="h-full w-full"
                                            preload="auto"
-                                           data-setup="{}"
+                                           playsinline
                                            data-start-seconds="{{ start_seconds }}"
                                            {% if enrollment %}data-enrollment-id="{{ enrollment.id }}"{% endif %}
                                            data-lesson-id="{{ active_lesson.id }}">
@@ -166,32 +166,40 @@
     </section>
 {% endblock %}
 {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video.js"></script>
+    <script type="module"
+            src="https://cdn.jsdelivr.net/npm/@videojs/html/cdn/video.js"></script>
     <script>
     const playerElement = document.getElementById('learning-player');
-    if (playerElement && window.videojs) {
-        const player = window.videojs('learning-player');
-        player.ready(() => {
-            const startSeconds = parseFloat(playerElement.dataset.startSeconds || '0');
-            if (startSeconds > 0) player.currentTime(startSeconds);
-        });
+    if (playerElement) {
+        const startSeconds = parseFloat(playerElement.dataset.startSeconds || '0');
+        const restorePosition = () => {
+            if (startSeconds > 0 && Number.isFinite(startSeconds)) {
+                playerElement.currentTime = startSeconds;
+            }
+        };
+        if (playerElement.readyState >= 1) {
+            restorePosition();
+        } else {
+            playerElement.addEventListener('loadedmetadata', restorePosition, { once: true });
+        }
+
         if (playerElement.dataset.enrollmentId) {
             let lastSaved = 0;
             const saveProgress = (completed = false) => window.app.post('{% url "learning:progress" %}', {
                 enrollment_id: playerElement.dataset.enrollmentId,
                 lesson_id: playerElement.dataset.lessonId,
-                seconds: Math.floor(player.currentTime()),
+                seconds: Math.floor(playerElement.currentTime || 0),
                 completed,
             });
-            player.on('timeupdate', () => {
-                const current = Math.floor(player.currentTime());
+            playerElement.addEventListener('timeupdate', () => {
+                const current = Math.floor(playerElement.currentTime || 0);
                 if (current - lastSaved >= 15) {
                     lastSaved = current;
                     saveProgress(false);
                 }
             });
-            player.on('pause', () => saveProgress(false));
-            player.on('ended', () => saveProgress(true));
+            playerElement.addEventListener('pause', () => saveProgress(false));
+            playerElement.addEventListener('ended', () => saveProgress(true));
             window.addEventListener('beforeunload', () => saveProgress(false));
         }
     }

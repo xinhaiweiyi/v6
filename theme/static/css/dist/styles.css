@@ -1484,18 +1484,6 @@
   .h-full {
     height: 100%;
   }
-  .max-h-20 {
-    max-height: calc(var(--spacing) * 20);
-  }
-  .max-h-40 {
-    max-height: calc(var(--spacing) * 40);
-  }
-  .max-h-80 {
-    max-height: calc(var(--spacing) * 80);
-  }
-  .max-h-100 {
-    max-height: calc(var(--spacing) * 100);
-  }
   .min-h-5 {
     min-height: calc(var(--spacing) * 5);
   }
@@ -1773,6 +1761,9 @@
   .bg-sky-100 {
     background-color: var(--color-sky-100);
   }
+  .bg-sky-500 {
+    background-color: var(--color-sky-500);
+  }
   .bg-sky-600 {
     background-color: var(--color-sky-600);
   }
@@ -1803,6 +1794,17 @@
   }
   .bg-yellow-300 {
     background-color: var(--color-yellow-300);
+  }
+  .bg-linear-to-r {
+    --tw-gradient-position: to right;
+  }
+  @supports (background-image: linear-gradient(in lab, red, red)) {
+    .bg-linear-to-r {
+      --tw-gradient-position: to right in oklab;
+    }
+  }
+  .bg-linear-to-r {
+    background-image: linear-gradient(var(--tw-gradient-stops));
   }
   .bg-gradient-to-br {
     --tw-gradient-position: to bottom right in oklab;
@@ -2169,11 +2171,6 @@
       scale: 1.02;
     }
   }
-  @media (hover: hover) {
-    .group-hover\:text-sky-800:is(:where(.group):hover *) {
-      color: var(--color-sky-800);
-    }
-  }
   .target\:border-sky-300:target {
     border-color: var(--color-sky-300);
   }
@@ -2237,21 +2234,6 @@
     .hover\:bg-sky-50:hover {
       background-color: var(--color-sky-50);
     }
-  }
-  .focus\:ring-2:focus {
-    --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
-    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
-  }
-  .focus\:ring-sky-300:focus {
-    --tw-ring-color: var(--color-sky-300);
-  }
-  .focus\:ring-offset-2:focus {
-    --tw-ring-offset-width: 2px;
-    --tw-ring-offset-shadow: var(--tw-ring-inset,) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  }
-  .focus\:outline-none:focus {
-    --tw-outline-style: none;
-    outline-style: none;
   }
   @media (width >= 40rem) {
     .sm\:mt-7 {
@@ -2489,11 +2471,6 @@
   @media (width >= 80rem) {
     .xl\:grid-cols-4 {
       grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-  }
-  @media (width >= 80rem) {
-    .xl\:grid-cols-5 {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
   @media (width >= 80rem) {

@@ -1,36 +1,41 @@
 {% extends 'base_dashboard.html' %}
 {% load portal_tags %}
-
 {% block title %}用户管理 | 在线视频学习系统{% endblock %}
 {% block sidebar_title %}用户管理{% endblock %}
 {% block sidebar_desc %}查看所有注册用户，支持筛选、排序和注销。{% endblock %}
-
 {% block sidebar %}
     <a href="{% url 'admin_panel:admin-dashboard' %}" class="dashboard-link">数据看板</a>
     <a href="{% url 'admin_panel:courses' %}" class="dashboard-link">课程审核</a>
     <a href="{% url 'admin_panel:users' %}" class="dashboard-link is-active">用户管理</a>
     <a href="{% url 'admin_panel:categories' %}" class="dashboard-link">分类管理</a>
 {% endblock %}
-
 {% block dashboard_content %}
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <h1 class="text-xl font-semibold text-slate-900">注册用户</h1>
-        <form method="get" class="mt-5 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_180px_140px]">
-            <select name="role" class="input input-bordered h-11 rounded-lg border-slate-200 bg-white">
+        <form method="get"
+              class="mt-5 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_180px_140px]">
+            <select name="role"
+                    class="input input-bordered h-11 rounded-lg border-slate-200 bg-white">
                 <option value="">全部角色</option>
                 {% for value, label in role_choices %}
                     <option value="{{ value }}" {% if role == value %}selected{% endif %}>{{ label }}</option>
                 {% endfor %}
             </select>
-            <input type="text" name="keyword" value="{{ keyword }}" class="input input-bordered h-11 rounded-lg border-slate-200 bg-white" placeholder="用户名或邮箱">
-            <select name="ordering" class="input input-bordered h-11 rounded-lg border-slate-200 bg-white">
-                <option value="-created_at" {% if ordering == '-created_at' %}selected{% endif %}>按注册时间倒序</option>
-                <option value="created_at" {% if ordering == 'created_at' %}selected{% endif %}>按注册时间正序</option>
-                <option value="email" {% if ordering == 'email' %}selected{% endif %}>按邮箱排序</option>
+            <input type="text"
+                   name="keyword"
+                   value="{{ keyword }}"
+                   class="input input-bordered h-11 rounded-lg border-slate-200 bg-white"
+                   placeholder="用户名或邮箱">
+            <select name="ordering"
+                    class="input input-bordered h-11 rounded-lg border-slate-200 bg-white">
+                <option value="-created_at"
+                        {% if ordering == '-created_at' %}selected{% endif %}>按注册时间倒序</option>
+                <option value="created_at"
+                        {% if ordering == 'created_at' %}selected{% endif %}>按注册时间正序</option>
             </select>
-            <button type="submit" class="btn btn-outline h-11 rounded-lg border-slate-300">筛选</button>
+            <button type="submit"
+                    class="btn btn-outline h-11 rounded-lg border-slate-300">筛选</button>
         </form>
-
         <div class="mt-6 overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="text-left text-slate-500">
@@ -49,7 +54,9 @@
                             <td class="py-3 pr-4">
                                 <div class="flex items-center gap-3 px-2 py-1">
                                     {% if user.avatar %}
-                                        <img src="{{ user.avatar.url }}" alt="{{ user.display_name }}" class="h-10 w-10 rounded-full object-cover">
+                                        <img src="{{ user.avatar.url }}"
+                                             alt="{{ user.display_name }}"
+                                             class="h-10 w-10 rounded-full object-cover">
                                     {% else %}
                                         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 text-sm font-semibold text-sky-700">
                                             {{ user.display_name|slice:":1" }}
@@ -61,16 +68,29 @@
                                 </div>
                             </td>
                             <td class="py-3 pr-4">{{ user.email }}</td>
-                            <td class="py-3 pr-4"><span class="badge {{ user.role|role_badge }}">{{ user.get_role_display }}</span></td>
-                            <td class="py-3 pr-4">{% if user.is_active %}正常{% else %}已注销{% endif %}</td>
+                            <td class="py-3 pr-4">
+                                <span class="badge {{ user.role|role_badge }}">{{ user.get_role_display }}</span>
+                            </td>
+                            <td class="py-3 pr-4">
+                                {% if user.is_active %}
+                                    正常
+                                {% else %}
+                                    已注销
+                                {% endif %}
+                            </td>
                             <td class="py-3 pr-4">{{ user.created_at|date:"Y-m-d H:i" }}</td>
                             <td class="py-3">
                                 {% if user.role == 'admin' %}
                                     <span class="text-slate-400">管理员不可注销</span>
                                 {% elif user.is_active %}
-                                    <form method="post" action="{% url 'admin_panel:user-deactivate' user.id %}" onsubmit="return confirm('确定要注销这个用户吗？注销后该用户将无法登录系统。');">
+                                    <form method="post"
+                                          action="{% url 'admin_panel:user-deactivate' user.id %}"
+                                          onsubmit="return confirm('确定要注销这个用户吗？注销后该用户将无法登录系统。');">
                                         {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline rounded-lg border-slate-300">注销用户</button>
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline rounded-lg border-slate-300">
+                                            注销用户
+                                        </button>
                                     </form>
                                 {% else %}
                                     <span class="text-slate-400">无需操作</span>
@@ -78,7 +98,9 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="6" class="py-8 text-center text-slate-500">暂无用户数据。</td></tr>
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-500">暂无用户数据。</td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>

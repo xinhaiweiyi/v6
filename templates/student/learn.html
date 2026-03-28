@@ -76,7 +76,12 @@
                                             </div>
                                         {% endif %}
                                         <div class="min-w-0">
-                                            <p class="font-medium text-slate-900">{{ comment.user.display_name }}</p>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="font-medium text-slate-900">{{ comment.user.display_name }}</p>
+                                                {% if comment.user.role == 'teacher' %}
+                                                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">老师</span>
+                                                {% endif %}
+                                            </div>
                                             <p class="mt-1 text-sm leading-6 text-slate-600">{{ comment.display_content }}</p>
                                             <p class="mt-2 text-xs text-slate-400">{{ comment.created_at|date:"Y-m-d H:i" }}</p>
                                         </div>
@@ -113,7 +118,12 @@
                                                             </div>
                                                         {% endif %}
                                                         <div class="min-w-0">
-                                                            <p class="font-medium text-slate-900">{{ reply.user.display_name }}</p>
+                                                            <div class="flex flex-wrap items-center gap-2">
+                                                                <p class="font-medium text-slate-900">{{ reply.user.display_name }}</p>
+                                                                {% if reply.user.role == 'teacher' %}
+                                                                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">老师</span>
+                                                                {% endif %}
+                                                            </div>
                                                             <p class="mt-1 text-sm leading-6 text-slate-600">{{ reply.display_content }}</p>
                                                             <p class="mt-2 text-xs text-slate-400">{{ reply.created_at|date:"Y-m-d H:i" }}</p>
                                                         </div>

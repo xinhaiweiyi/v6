@@ -83,7 +83,8 @@ class Command(BaseCommand):
             {"email": "student4@demo.com", "username": "周可欣", "role": User.Role.STUDENT, "label": "学生账号 4"},
         ]
         created_users = []
-        for item in definitions:
+        base_time = timezone.now() - timedelta(days=18)
+        for index, item in enumerate(definitions):
             defaults = {
                 "username": item["username"],
                 "role": item["role"],
@@ -92,15 +93,29 @@ class Command(BaseCommand):
             }
             user, created = User.objects.get_or_create(email=item["email"], defaults=defaults)
             changed = False
+            joined_at = base_time + timedelta(days=index * 2, hours=index)
             for field, value in defaults.items():
                 if getattr(user, field) != value:
                     setattr(user, field, value)
                     changed = True
+            if user.date_joined != joined_at:
+                user.date_joined = joined_at
+                changed = True
             if created or not user.check_password(USER_PASSWORD):
                 user.set_password(USER_PASSWORD)
                 changed = True
             if changed:
                 user.save()
+            created_at = joined_at + timedelta(minutes=12)
+            updated_fields = []
+            if user.created_at != created_at:
+                user.created_at = created_at
+                updated_fields.append("created_at")
+            if user.updated_at < created_at:
+                user.updated_at = created_at
+                updated_fields.append("updated_at")
+            if updated_fields:
+                user.save(update_fields=updated_fields)
             created_users.append(item)
         return created_users
 

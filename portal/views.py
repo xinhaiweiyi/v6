@@ -28,11 +28,8 @@ def home(request):
         request,
         "public/home.html",
         {
-            "courses": courses,
-            "categories": categories,
-            "selected_category": category_slug,
-            "keyword": keyword,
-        },
+            "courses": courses,"categories": categories,"selected_category": category_slug,"keyword": keyword,
+        }
     )
 
 

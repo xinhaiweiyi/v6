@@ -1,14 +1,11 @@
 {% extends 'base_dashboard.html' %}
-
 {% block title %}账号信息 | 在线视频学习系统{% endblock %}
 {% block sidebar_title %}账号中心{% endblock %}
 {% block sidebar_desc %}修改头像、用户名和登录密码。{% endblock %}
-
 {% block sidebar %}
     <a href="{% url 'accounts:profile' %}" class="dashboard-link is-active">账号信息</a>
     <a href="{% url 'portal:role-home' %}" class="dashboard-link">返回门户首页</a>
 {% endblock %}
-
 {% block dashboard_content %}
     <div class="grid gap-6 xl:grid-cols-2">
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
@@ -16,35 +13,25 @@
             <form method="post" enctype="multipart/form-data" class="mt-5 space-y-5">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="profile">
-
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <span class="mb-3 block text-sm font-medium text-slate-700">当前头像</span>
                     <div class="flex items-center gap-4">
-                        <div
-                            class="flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm"
-                            style="width: 80px; height: 80px;"
-                        >
+                        <div class="flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white shadow-sm"
+                             style="width: 80px;
+                                    height: 80px">
                             {% if request.user.avatar %}
-                                <img
-                                    id="avatar-preview"
-                                    src="{{ request.user.avatar.url }}"
-                                    alt="{{ request.user.display_name }}"
-                                    class="h-full w-full object-cover"
-                                >
+                                <img id="avatar-preview"
+                                     src="{{ request.user.avatar.url }}"
+                                     alt="{{ request.user.display_name }}"
+                                     class="h-full w-full object-cover">
                             {% else %}
-                                <div
-                                    id="avatar-fallback"
-                                    class="flex h-full w-full items-center justify-center bg-sky-100 font-semibold text-sky-700"
-                                    style="font-size: 1.25rem;"
-                                >
-                                    {{ request.user.display_name|slice:":1" }}
-                                </div>
-                                <img
-                                    id="avatar-preview"
-                                    src=""
-                                    alt="{{ request.user.display_name }}"
-                                    class="hidden h-full w-full object-cover"
-                                >
+                                <div id="avatar-fallback"
+                                     class="flex h-full w-full items-center justify-center bg-sky-100 font-semibold text-sky-700"
+                                     style="font-size: 1.25rem">{{ request.user.display_name|slice:":1" }}</div>
+                                <img id="avatar-preview"
+                                     src=""
+                                     alt="{{ request.user.display_name }}"
+                                     class="hidden h-full w-full object-cover">
                             {% endif %}
                         </div>
                         <div class="max-w-xs text-sm text-slate-500">
@@ -53,7 +40,6 @@
                         </div>
                     </div>
                 </div>
-
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">用户名</span>
                     {{ profile_form.username }}
@@ -61,7 +47,6 @@
                         <span class="mt-2 text-sm text-rose-500">{{ profile_form.username.errors|join:" " }}</span>
                     {% endif %}
                 </label>
-
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">上传头像</span>
                     {{ profile_form.avatar }}
@@ -69,23 +54,19 @@
                         <span class="mt-2 text-sm text-rose-500">{{ profile_form.avatar.errors|join:" " }}</span>
                     {% endif %}
                 </label>
-
                 <button type="submit" class="btn btn-primary rounded-lg text-white">保存资料</button>
             </form>
         </div>
-
         <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
             <h2 class="text-xl font-semibold text-slate-900">重置密码</h2>
             <form method="post" class="mt-5 space-y-5">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="password">
-
                 {% if password_form.non_field_errors %}
                     <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                         {{ password_form.non_field_errors|join:" " }}
                     </div>
                 {% endif %}
-
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">原密码</span>
                     {{ password_form.old_password }}
@@ -93,7 +74,6 @@
                         <span class="mt-2 text-sm text-rose-500">{{ password_form.old_password.errors|join:" " }}</span>
                     {% endif %}
                 </label>
-
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">新密码</span>
                     {{ password_form.new_password1 }}
@@ -101,7 +81,6 @@
                         <span class="mt-2 text-sm text-rose-500">{{ password_form.new_password1.errors|join:" " }}</span>
                     {% endif %}
                 </label>
-
                 <label class="form-control block">
                     <span class="mb-2 block text-sm font-medium text-slate-700">确认新密码</span>
                     {{ password_form.new_password2 }}
@@ -109,13 +88,11 @@
                         <span class="mt-2 text-sm text-rose-500">{{ password_form.new_password2.errors|join:" " }}</span>
                     {% endif %}
                 </label>
-
                 <button type="submit" class="btn btn-outline rounded-lg border-slate-300">更新密码</button>
             </form>
         </div>
     </div>
 {% endblock %}
-
 {% block extra_js %}
     {{ block.super }}
     <script>

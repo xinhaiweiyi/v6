@@ -92,6 +92,24 @@ class LearningFlowTests(TestCase):
         self.assertContains(response, "100%")
         self.assertContains(response, "已完成 1/1 节视频")
 
+    def test_student_dashboard_is_paginated(self):
+        for index in range(9):
+            extra_course = Course.objects.create(
+                teacher=self.teacher,
+                category=self.category,
+                title=f"Extra Course {index}",
+                description="Course description",
+                status=Course.Status.PUBLISHED,
+            )
+            Enrollment.objects.create(student=self.student, course=extra_course)
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse("learning:student-dashboard"), {"page": 2})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page_obj"].number, 2)
+        self.assertContains(response, "上一页")
+
     def test_teacher_can_delete_comment_under_own_course(self):
         Enrollment.objects.create(student=self.student, course=self.course)
         comment = Comment.objects.create(course=self.course, lesson=self.lesson, user=self.student, content="test")
@@ -102,6 +120,36 @@ class LearningFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         comment.refresh_from_db()
         self.assertIsNotNone(comment.deleted_at)
+
+    def test_student_can_delete_own_comment(self):
+        Enrollment.objects.create(student=self.student, course=self.course)
+        comment = Comment.objects.create(course=self.course, lesson=self.lesson, user=self.student, content="mine")
+        self.client.force_login(self.student)
+
+        response = self.client.post(reverse("comments:delete", args=[comment.id]), {"reason": "self-delete"})
+
+        self.assertEqual(response.status_code, 200)
+        comment.refresh_from_db()
+        self.assertIsNotNone(comment.deleted_at)
+        self.assertEqual(comment.deleted_by, self.student)
+
+    def test_student_cannot_delete_other_student_comment(self):
+        other_student = User.objects.create_user(
+            email="student-other@example.com",
+            username="Other Student",
+            password="StrongPass123!",
+            role=User.Role.STUDENT,
+        )
+        Enrollment.objects.create(student=self.student, course=self.course)
+        Enrollment.objects.create(student=other_student, course=self.course)
+        comment = Comment.objects.create(course=self.course, lesson=self.lesson, user=other_student, content="not mine")
+        self.client.force_login(self.student)
+
+        response = self.client.post(reverse("comments:delete", args=[comment.id]), {"reason": "self-delete"})
+
+        self.assertEqual(response.status_code, 403)
+        comment.refresh_from_db()
+        self.assertIsNone(comment.deleted_at)
 
     def test_teacher_can_open_published_course_without_enrollment(self):
         self.client.force_login(self.teacher)
@@ -195,6 +243,30 @@ class LearningFlowTests(TestCase):
         self.assertContains(response, "我的评论")
         self.assertContains(response, comment.content)
         self.assertNotContains(response, "我的课程与评论")
+
+    def test_student_comment_page_shows_delete_action_for_active_comment(self):
+        Enrollment.objects.create(student=self.student, course=self.course)
+        Comment.objects.create(course=self.course, lesson=self.lesson, user=self.student, content="delete on center")
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse("learning:student-center"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-delete-comment')
+
+    def test_deleted_comment_is_hidden_from_student_comment_page(self):
+        Enrollment.objects.create(student=self.student, course=self.course)
+        comment = Comment.objects.create(course=self.course, lesson=self.lesson, user=self.student, content="hidden from center")
+        comment.deleted_at = comment.created_at
+        comment.deleted_by = self.student
+        comment.delete_reason = "self-delete"
+        comment.save(update_fields=["deleted_at", "deleted_by", "delete_reason", "updated_at"])
+        self.client.force_login(self.student)
+
+        response = self.client.get(reverse("learning:student-center"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "hidden from center")
 
     def test_comment_area_shows_avatar_or_initial(self):
         Enrollment.objects.create(student=self.student, course=self.course)

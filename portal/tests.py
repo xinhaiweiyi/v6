@@ -115,6 +115,22 @@ class AdminCourseReviewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.published_course.title)
 
+    def test_admin_user_list_is_paginated(self):
+        for index in range(12):
+            User.objects.create_user(
+                email=f"student{index}@example.com",
+                username=f"Student {index}",
+                password="StrongPass123!",
+                role=User.Role.STUDENT,
+            )
+        self.client.force_login(self.admin_user)
+
+        response = self.client.get(reverse("admin_panel:users"), {"page": 2})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["page_obj"].number, 2)
+        self.assertContains(response, "上一页")
+
     def test_admin_can_update_course_category_from_review_list(self):
         new_category = Category.objects.create(name="Design", is_active=True)
         self.client.force_login(self.admin_user)

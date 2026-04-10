@@ -1,170 +1,193 @@
 {% extends 'base_dashboard.html' %}
 {% load portal_tags %}
-
-{% block title %}{% if course %}编辑课程{% else %}创建课程{% endif %} | 在线视频学习系统{% endblock %}
+{% block title %}
+    {% if course %}
+        编辑课程
+    {% else %}
+        创建课程
+    {% endif %}
+    | 在线视频学习系统
+{% endblock %}
 {% block sidebar_title %}课程编辑{% endblock %}
 {% block sidebar_desc %}完善课程信息、章节和视频后提交审核。{% endblock %}
-
 {% block sidebar %}
-<a href="{% url 'portal:teacher-dashboard' %}" class="dashboard-link">工作台</a>
-<a href="{% url 'courses:teacher-courses' %}" class="dashboard-link">课程管理</a>
-<a href="{% if course %}{% url 'courses:teacher-course-edit' course.id %}{% else %}{% url 'courses:teacher-course-create' %}{% endif %}"
-    class="dashboard-link is-active">{% if course %}编辑当前课程{% else %}创建课程{% endif %}</a>
+    <a href="{% url 'portal:teacher-dashboard' %}" class="dashboard-link">工作台</a>
+    <a href="{% url 'courses:teacher-courses' %}" class="dashboard-link">课程管理</a>
+    <a href="{% if course %}{% url 'courses:teacher-course-edit' course.id %}{% else %}{% url 'courses:teacher-course-create' %}{% endif %}"
+       class="dashboard-link is-active">
+        {% if course %}
+            编辑当前课程
+        {% else %}
+            创建课程
+        {% endif %}
+    </a>
 {% endblock %}
-
 {% block dashboard_content %}
-<div class="grid gap-6 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
-    <div class="space-y-6 xl:max-w-2xl">
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <h1 class="text-xl font-semibold text-slate-900">{% if course %}编辑课程{% else %}创建课程{% endif %}</h1>
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
+        <div class="space-y-6 xl:max-w-2xl">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 class="text-xl font-semibold text-slate-900">
+                            {% if course %}
+                                编辑课程
+                            {% else %}
+                                创建课程
+                            {% endif %}
+                        </h1>
+                    </div>
+                    {% if course %}<span class="badge {{ course.status|status_badge }}">{{ course.get_status_display }}</span>{% endif %}
                 </div>
-                {% if course %}
-                <span class="badge {{ course.status|status_badge }}">{{ course.get_status_display }}</span>
+                <form method="post" enctype="multipart/form-data" class="mt-6 space-y-5">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="course">
+                    <label class="form-control block">
+                        <span class="mb-2 block text-sm font-medium text-slate-700">课程名称</span>{{ form.title }}
+                    </label>
+                    <label class="form-control block">
+                        <span class="mb-2 block text-sm font-medium text-slate-700">课程分类</span>{{ form.category }}
+                    </label>
+                    <label class="form-control block">
+                        <span class="mb-2 block text-sm font-medium text-slate-700">课程封面</span>
+                        {{ form.cover }}
+                        {{ form.remove_cover }}
+                        <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3"
+                             data-cover-preview-wrapper
+                             {% if not course or not course.cover %}hidden{% endif %}>
+                            <div class="mb-3 flex items-center justify-between gap-3">
+                                <p class="text-xs text-slate-500">封面预览</p>
+                                <button type="button"
+                                        class="btn btn-xs btn-outline rounded-lg border-slate-300"
+                                        data-clear-cover-button>清除封面</button>
+                            </div>
+                            <img src="{% if course and course.cover %}{{ course.cover.url }}{% endif %}"
+                                 alt="课程封面预览"
+                                 class="aspect-[16/9] w-full rounded-xl object-cover"
+                                 data-cover-preview-image>
+                        </div>
+                    </label>
+                    <label class="form-control block">
+                        <span class="mb-2 block text-sm font-medium text-slate-700">课程简介</span>{{ form.description }}
+                    </label>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit" class="btn btn-primary rounded-lg text-white">保存课程信息</button>
+                        {% if course %}
+                            <button type="button"
+                                    id="submit-review-button"
+                                    class="btn btn-outline rounded-lg border-slate-300">提交审核</button>
+                            <a href="{% url 'learning:learn-course' course.slug %}"
+                               class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
+                        {% endif %}
+                    </div>
+                </form>
+                {% if course and course.review_note %}
+                    <div class="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">审核备注：{{ course.review_note }}</div>
+                {% endif %}
+                {% if course and course.offline_reason %}
+                    <div class="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">下架原因：{{ course.offline_reason }}</div>
                 {% endif %}
             </div>
-            <form method="post" enctype="multipart/form-data" class="mt-6 space-y-5">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="course">
-                <label class="form-control block"><span
-                        class="mb-2 block text-sm font-medium text-slate-700">课程名称</span>{{ form.title }}</label>
-                <label class="form-control block"><span
-                        class="mb-2 block text-sm font-medium text-slate-700">课程分类</span>{{ form.category }}</label>
-                <label class="form-control block"><span
-                        class="mb-2 block text-sm font-medium text-slate-700">课程封面</span>
-                    {{ form.cover }}
-                    {{ form.remove_cover }}
-                    <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3" data-cover-preview-wrapper
-                        {% if not course or not course.cover %}hidden{% endif %}>
-                        <div class="mb-3 flex items-center justify-between gap-3">
-                            <p class="text-xs text-slate-500">封面预览</p>
-                            <button type="button" class="btn btn-xs btn-outline rounded-lg border-slate-300"
-                                data-clear-cover-button>清除封面</button>
-                        </div>
-                        <img src="{% if course and course.cover %}{{ course.cover.url }}{% endif %}" alt="课程封面预览"
-                            class="aspect-[16/9] w-full rounded-xl object-cover" data-cover-preview-image>
-                    </div>
-                </label>
-                <label class="form-control block"><span
-                        class="mb-2 block text-sm font-medium text-slate-700">课程简介</span>{{ form.description }}</label>
-                <div class="flex flex-wrap gap-3">
-                    <button type="submit" class="btn btn-primary rounded-lg text-white">保存课程信息</button>
-                    {% if course %}
-                    <button type="button" id="submit-review-button"
-                        class="btn btn-outline rounded-lg border-slate-300">提交审核</button>
-                    <a href="{% url 'learning:learn-course' course.slug %}"
-                        class="btn btn-outline rounded-lg border-slate-300">观看视频</a>
-                    {% endif %}
+        </div>
+        <div class="space-y-6">
+            {% if course %}
+                <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+                    <h2 class="text-lg font-semibold text-slate-900">新增章节</h2>
+                    <form method="post"
+                          action="{% url 'courses:chapter-create' course.id %}"
+                          class="mt-5 grid gap-4 md:grid-cols-[1fr_140px]">
+                        {% csrf_token %}
+                        {{ chapter_form.title }}
+                        <button type="submit" class="btn btn-primary rounded-lg text-white">添加章节</button>
+                    </form>
+                    <!-- <p class="mt-3 text-xs text-slate-400">新增章节后会自动排在当前课程最后，无需手动填写顺序。</p> -->
                 </div>
-            </form>
-            {% if course and course.review_note %}
-            <div class="mt-5 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">审核备注：{{ course.review_note }}
-            </div>
-            {% endif %}
-            {% if course and course.offline_reason %}
-            <div class="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">下架原因：{{ course.offline_reason }}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="space-y-6">
-        {% if course %}
-        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-            <h2 class="text-lg font-semibold text-slate-900">新增章节</h2>
-            <form method="post" action="{% url 'courses:chapter-create' course.id %}"
-                class="mt-5 grid gap-4 md:grid-cols-[1fr_140px]">
-                {% csrf_token %}
-                {{ chapter_form.title }}
-                <button type="submit" class="btn btn-primary rounded-lg text-white">添加章节</button>
-            </form>
-            <!-- <p class="mt-3 text-xs text-slate-400">新增章节后会自动排在当前课程最后，无需手动填写顺序。</p> -->
-        </div>
-
-        <div class="space-y-4">
-            {% for chapter in course.chapters.all %}
-            {% if forloop.first %}
-            <details class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft" open>
-                {% else %}
-                <details class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
-                    {% endif %}
-                    <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
-                        <div>
-                            <h3 class="text-lg font-semibold text-slate-900">
-                                第 {{ chapter.order }} 章 · <span>{{ chapter.title }}</span>
-                            </h3>
-                            <p class="mt-1 text-sm text-slate-500">{{ chapter.lessons.count }} 个视频，点击可展开或收起</p>
-                        </div>
-                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
-                            排序 {{ chapter.order }}
-                        </span>
-                    </summary>
-                    <div class="mt-5 space-y-4 border-t border-slate-100 pt-5">
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                            <p class="text-sm text-slate-500">本章节新增视频也会自动按顺序排到最后。</p>
-                            <form method="post" action="{% url 'courses:chapter-delete' chapter.id %}"
-                                onsubmit="return confirm('确定要删除这个章节和它下面的所有视频吗？');">
-                                {% csrf_token %}
-                                <button type="submit"
-                                    class="btn btn-sm btn-outline rounded-lg border-rose-200 text-rose-600">删除章节</button>
-                            </form>
-                        </div>
-                        <form method="post" action="{% url 'courses:lesson-create' chapter.id %}"
-                            enctype="multipart/form-data" class="grid gap-3" data-lesson-upload-form>
-                            {% csrf_token %}
-                            {{ lesson_form.title }}
-                            {{ lesson_form.duration_seconds }}
-                            <p class="text-xs text-slate-400" data-duration-hint>选择视频后将自动读取时长</p>
-                            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px]">
-                                {{ lesson_form.video }}
-                                <button type="submit" class="btn btn-outline rounded-lg border-slate-300">上传视频</button>
-                            </div>
-                        </form>
-                        <div class="space-y-2">
-                            {% for lesson in chapter.lessons.all %}
-                            <div
-                                class="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3 text-sm">
-                                <div>
-                                    <p class="font-medium text-slate-700">
-                                        第 {{ lesson.order }} 节 · <span>{{ lesson.title }}</span>
-                                    </p>
-                                    <p class="mt-1 text-xs text-slate-400">
-                                        时长 {{ lesson.duration_seconds|duration_human }}
-                                    </p>
+                <div class="space-y-4">
+                    {% for chapter in course.chapters.all %}
+                        {% if forloop.first %}
+                            <details class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft"
+                                     open>
+                            {% else %}
+                                <details class="rounded-2xl border border-slate-200 bg-white p-5 shadow-soft">
+                                {% endif %}
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-4">
+                                    <div>
+                                        <h3 class="text-lg font-semibold text-slate-900">
+                                            第 {{ chapter.order }} 章 · <span>{{ chapter.title }}</span>
+                                        </h3>
+                                        <p class="mt-1 text-sm text-slate-500">{{ chapter.lessons.count }} 个视频，点击可展开或收起</p>
+                                    </div>
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">排序 {{ chapter.order }}</span>
+                                </summary>
+                                <div class="mt-5 space-y-4 border-t border-slate-100 pt-5">
+                                    <div class="flex flex-wrap items-center justify-between gap-3">
+                                        <p class="text-sm text-slate-500">本章节新增视频也会自动按顺序排到最后。</p>
+                                        <form method="post"
+                                              action="{% url 'courses:chapter-delete' chapter.id %}"
+                                              onsubmit="return confirm('确定要删除这个章节和它下面的所有视频吗？');">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline rounded-lg border-rose-200 text-rose-600">
+                                                删除章节
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <form method="post"
+                                          action="{% url 'courses:lesson-create' chapter.id %}"
+                                          enctype="multipart/form-data"
+                                          class="grid gap-3"
+                                          data-lesson-upload-form>
+                                        {% csrf_token %}
+                                        {{ lesson_form.title }}
+                                        {{ lesson_form.duration_seconds }}
+                                        <p class="text-xs text-slate-400" data-duration-hint>选择视频后将自动读取时长</p>
+                                        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_140px]">
+                                            {{ lesson_form.video }}
+                                            <button type="submit" class="btn btn-outline rounded-lg border-slate-300">上传视频</button>
+                                        </div>
+                                    </form>
+                                    <div class="space-y-2">
+                                        {% for lesson in chapter.lessons.all %}
+                                            <div class="flex items-center justify-between gap-4 rounded-xl bg-slate-50 px-4 py-3 text-sm">
+                                                <div>
+                                                    <p class="font-medium text-slate-700">
+                                                        第 {{ lesson.order }} 节 · <span>{{ lesson.title }}</span>
+                                                    </p>
+                                                    <p class="mt-1 text-xs text-slate-400">时长 {{ lesson.duration_seconds|duration_human }}</p>
+                                                </div>
+                                                <form method="post"
+                                                      action="{% url 'courses:lesson-delete' lesson.id %}"
+                                                      onsubmit="return confirm('确定要删除这个视频吗？');">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn btn-xs btn-outline rounded-lg border-rose-200 text-rose-600">
+                                                        删除视频
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        {% empty %}
+                                            <div class="rounded-xl border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-400">
+                                                本章节还没有视频。
+                                            </div>
+                                        {% endfor %}
+                                    </div>
                                 </div>
-                                <form method="post" action="{% url 'courses:lesson-delete' lesson.id %}"
-                                    onsubmit="return confirm('确定要删除这个视频吗？');">
-                                    {% csrf_token %}
-                                    <button type="submit"
-                                        class="btn btn-xs btn-outline rounded-lg border-rose-200 text-rose-600">删除视频</button>
-                                </form>
+                            </details>
+                        {% empty %}
+                            <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
+                                请先新增章节，再上传视频。
                             </div>
-                            {% empty %}
-                            <div
-                                class="rounded-xl border border-dashed border-slate-300 px-3 py-6 text-center text-sm text-slate-400">
-                                本章节还没有视频。</div>
-                            {% endfor %}
-                        </div>
+                        {% endfor %}
                     </div>
-                </details>
-                {% empty %}
-                <div
-                    class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500">
-                    请先新增章节，再上传视频。</div>
-                {% endfor %}
+                {% else %}
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500 shadow-soft">
+                        课程创建后，这里会显示章节和视频管理区域。
+                    </div>
+                {% endif %}
+            </div>
         </div>
-        {% else %}
-        <div
-            class="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-slate-500 shadow-soft">
-            课程创建后，这里会显示章节和视频管理区域。</div>
-        {% endif %}
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
+    {% endblock %}
+    {% block extra_js %}
+        <script>
     document.getElementById('submit-review-button')?.addEventListener('click', async (event) => {
         const response = await window.app.post('{% if course %}{% url "courses:submit-review" course.id %}{% endif %}', {}, event.currentTarget);
         if (response?.ok) {
@@ -288,5 +311,5 @@
             probeVideo.src = objectUrl;
         });
     });
-</script>
-{% endblock %}
+        </script>
+    {% endblock %}

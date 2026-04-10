@@ -6,6 +6,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from bishe.pagination import paginate_queryset
 from bishe.permissions import role_home_url, role_required
 from courses.models import Course, Lesson
 from learning.forms import CommentForm
@@ -34,11 +35,15 @@ def student_dashboard(request):
         .order_by("-last_learned_at", "-joined_at")
     )
     _attach_progress_stats(enrollments)
+    page_obj, page_query = paginate_queryset(request, enrollments, 8)
     return render(
         request,
         "student/dashboard.html",
         {
-            "enrollments": enrollments,
+            "enrollments": page_obj,
+            "page_obj": page_obj,
+            "page_query": page_query,
+            "total_enrollments": page_obj.paginator.count,
         },
     )
 
@@ -46,14 +51,20 @@ def student_dashboard(request):
 @role_required("student")
 def student_center(request):
     comments = (
-        Comment.objects.filter(user=request.user)
+        Comment.objects.filter(user=request.user, deleted_at__isnull=True)
         .select_related("course", "lesson", "parent")
         .order_by("-created_at")
     )
+    page_obj, page_query = paginate_queryset(request, comments, 10)
     return render(
         request,
         "student/center.html",
-        {"comments": comments},
+        {
+            "comments": page_obj,
+            "page_obj": page_obj,
+            "page_query": page_query,
+            "total_comments": page_obj.paginator.count,
+        },
     )
 
 
@@ -104,6 +115,7 @@ def learn_course(request, slug):
     can_moderate_comments = request.user.role == "admin" or (
         request.user.role == "teacher" and course.teacher_id == request.user.id
     )
+    can_delete_own_comments = request.user.role == "student" and can_track_progress
 
     back_url = role_home_url(request.user)
     back_label = "返回我的课程" if request.user.role == "student" else "返回我的主页"
@@ -140,6 +152,7 @@ def learn_course(request, slug):
             "can_track_progress": can_track_progress,
             "can_comment": can_comment,
             "can_moderate_comments": can_moderate_comments,
+            "can_delete_own_comments": can_delete_own_comments,
             "back_url": back_url,
             "back_label": back_label,
         },
@@ -214,13 +227,16 @@ def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment.objects.select_related("course__teacher"), pk=comment_id)
     can_delete = request.user.role == "admin" or (
         request.user.role == "teacher" and comment.course.teacher_id == request.user.id
+    ) or (
+        request.user.role == "student" and comment.user_id == request.user.id
     )
     if not can_delete:
         return JsonResponse({"ok": False, "message": "您没有删除该评论的权限。"}, status=403)
 
     comment.deleted_at = timezone.now()
     comment.deleted_by = request.user
-    comment.delete_reason = request.POST.get("reason", "内容违规")
+    default_reason = "用户自行删除" if request.user.role == "student" else "内容违规"
+    comment.delete_reason = request.POST.get("reason", default_reason)
     comment.save(update_fields=["deleted_at", "deleted_by", "delete_reason", "updated_at"])
     return JsonResponse(
         {

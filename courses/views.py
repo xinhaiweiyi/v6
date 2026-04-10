@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from bishe.pagination import paginate_queryset
 from bishe.permissions import role_required
 from courses.forms import CategoryForm, ChapterForm, CourseForm, LessonForm
 from courses.models import Category, Chapter, Course, Lesson
@@ -53,14 +54,17 @@ def teacher_course_list(request):
         courses = courses.filter(status=status)
     if keyword:
         courses = courses.filter(title__icontains=keyword)
+    page_obj, page_query = paginate_queryset(request, courses, 8)
     return render(
         request,
         "teacher/course_list.html",
         {
-            "courses": courses,
+            "courses": page_obj,
             "status": status,
             "keyword": keyword,
             "status_choices": Course.Status.choices,
+            "page_obj": page_obj,
+            "page_query": page_query,
         },
     )
 
@@ -265,17 +269,20 @@ def teacher_course_progress(request, course_id):
     else:
         enrollments = list(enrollments.order_by("-progress_percent_db", "-last_learned_at", "-joined_at"))
     _attach_enrollment_progress(enrollments)
+    page_obj, page_query = paginate_queryset(request, enrollments, 10)
     return render(
         request,
         "teacher/course_progress.html",
         {
             "course": course,
-            "enrollments": enrollments,
+            "enrollments": page_obj,
             "ordering": ordering,
             "ordering_choices": [
                 ("-progress", "学习进度从高到低"),
                 ("progress", "学习进度从低到高"),
             ],
+            "page_obj": page_obj,
+            "page_query": page_query,
         },
     )
 

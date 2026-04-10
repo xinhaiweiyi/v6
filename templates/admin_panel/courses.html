@@ -14,6 +14,7 @@
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-semibold text-slate-900">课程审核列表</h1>
+            <span class="text-sm text-slate-500">当前共 {{ total_courses }} 门课程</span>
         </div>
         <form method="get"
               class="mt-5 grid max-w-md gap-3 sm:grid-cols-[minmax(0,1fr)_96px]">
@@ -105,6 +106,7 @@
             </div>
         {% endfor %}
     </div>
+    {% include "includes/pagination.html" %}
 {% endblock %}
 {% block extra_js %}
     <script>

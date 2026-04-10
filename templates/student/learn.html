@@ -97,7 +97,14 @@
                                             <button type="button"
                                                     class="text-sm font-medium text-rose-600"
                                                     data-delete-comment
-                                                    data-comment-id="{{ comment.id }}">删除</button>
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-delete-reason="老师从评论区删除评论">删除</button>
+                                        {% elif can_delete_own_comments and comment.user_id == request.user.id and not comment.is_deleted %}
+                                            <button type="button"
+                                                    class="text-sm font-medium text-rose-600"
+                                                    data-delete-comment
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-delete-reason="用户自行删除">删除</button>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -132,7 +139,14 @@
                                                         <button type="button"
                                                                 class="shrink-0 text-sm font-medium text-rose-600"
                                                                 data-delete-comment
-                                                                data-comment-id="{{ reply.id }}">删除</button>
+                                                                data-comment-id="{{ reply.id }}"
+                                                                data-delete-reason="老师从评论区删除评论">删除</button>
+                                                    {% elif can_delete_own_comments and reply.user_id == request.user.id and not reply.is_deleted %}
+                                                        <button type="button"
+                                                                class="shrink-0 text-sm font-medium text-rose-600"
+                                                                data-delete-comment
+                                                                data-comment-id="{{ reply.id }}"
+                                                                data-delete-reason="用户自行删除">删除</button>
                                                     {% endif %}
                                                 </div>
                                             </div>
@@ -227,7 +241,7 @@
             const confirmed = window.confirm('确定要删除这条评论吗？删除后评论会从当前列表中消失。');
             if (!confirmed) return;
             const response = await window.app.post(`/comments/${button.dataset.commentId}/delete/`, {
-                reason: '老师从评论区删除评论',
+                reason: button.dataset.deleteReason || '用户自行删除',
             }, button);
             if (response?.ok) {
                 window.app.toast(response.message, 'success');

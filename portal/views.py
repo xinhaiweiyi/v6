@@ -9,6 +9,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.models import User
+from bishe.pagination import paginate_queryset
 from bishe.permissions import role_home_url, role_required
 from courses.forms import CategoryForm
 from courses.models import Category, Course
@@ -23,12 +24,19 @@ def home(request):
         courses = courses.filter(category__slug=category_slug)
     if keyword:
         courses = courses.filter(Q(title__icontains=keyword) | Q(description__icontains=keyword) | Q(teacher__username__icontains=keyword))
+    page_obj, page_query = paginate_queryset(request, courses, 10)
     categories = Category.objects.filter(is_active=True).annotate(course_total=Count("courses"))
     return render(
         request,
         "public/home.html",
         {
-            "courses": courses,"categories": categories,"selected_category": category_slug,"keyword": keyword,
+            "courses": page_obj,
+            "categories": categories,
+            "selected_category": category_slug,
+            "keyword": keyword,
+            "page_obj": page_obj,
+            "page_query": page_query,
+            "total_courses": page_obj.paginator.count,
         }
     )
 
@@ -108,15 +116,19 @@ def admin_user_list(request):
     if role:
         users = users.filter(role=role)
     users = users.order_by(ordering)
+    page_obj, page_query = paginate_queryset(request, users, 10)
     return render(
         request,
         "admin_panel/users.html",
         {
-            "users": users,
+            "users": page_obj,
             "keyword": keyword,
             "role": role,
             "ordering": ordering,
             "role_choices": User.Role.choices,
+            "page_obj": page_obj,
+            "page_query": page_query,
+            "total_users": page_obj.paginator.count,
         },
     )
 
@@ -243,14 +255,18 @@ def admin_course_review_list(request):
     courses = Course.objects.select_related("teacher", "category").order_by("-submitted_at", "-updated_at")
     if status:
         courses = courses.filter(status=status)
+    page_obj, page_query = paginate_queryset(request, courses, 8)
     return render(
         request,
         "admin_panel/courses.html",
         {
-            "courses": courses,
+            "courses": page_obj,
             "categories": Category.objects.all().order_by("name"),
             "status": status,
             "status_choices": [("", "全部状态"), *Course.Status.choices],
+            "page_obj": page_obj,
+            "page_query": page_query,
+            "total_courses": page_obj.paginator.count,
         },
     )
 

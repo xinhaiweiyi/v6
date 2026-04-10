@@ -12,6 +12,7 @@
 {% block dashboard_content %}
     <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <h1 class="text-xl font-semibold text-slate-900">注册用户</h1>
+        <p class="mt-1 text-sm text-slate-500">当前共 {{ total_users }} 个用户</p>
         <form method="get"
               class="mt-5 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)_180px_140px]">
             <select name="role"
@@ -105,5 +106,6 @@
                 </tbody>
             </table>
         </div>
+        {% include "includes/pagination.html" %}
     </div>
 {% endblock %}

@@ -16,7 +16,7 @@
                 <h1 class="text-2xl font-semibold text-slate-900">我的课程</h1>
                 <p class="mt-1 text-sm text-slate-500">点击课程即可继续观看，封面、最近学习内容和学习进度都会显示在这里。</p>
             </div>
-            <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">共 {{ enrollments|length }} 门课程</div>
+            <div class="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">共 {{ total_enrollments }} 门课程</div>
         </div>
         <div class="mt-6 grid gap-5 lg:grid-cols-4">
             {% for enrollment in enrollments %}
@@ -69,5 +69,6 @@
                 </div>
             {% endfor %}
         </div>
+        {% include "includes/pagination.html" %}
     </section>
 {% endblock %}

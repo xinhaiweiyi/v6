@@ -1,7 +1,10 @@
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from django.core.files.storage import default_storage
+from django.test import override_settings
 from unittest.mock import patch
+import tempfile
 
 from accounts.models import User
 from courses.models import Category, Chapter, Course, Lesson
@@ -212,6 +215,56 @@ class CourseReviewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Course.objects.filter(pk=course_to_delete.pk).exists())
+
+    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
+    def test_teacher_delete_course_removes_cover_and_lesson_video_files(self):
+        course_to_delete = Course.objects.create(
+            teacher=self.teacher,
+            category=self.category,
+            title="Delete me with files",
+            description="Course to delete with files",
+            cover=SimpleUploadedFile("cover-delete.png", b"cover-bytes", content_type="image/png"),
+        )
+        chapter = Chapter.objects.create(course=course_to_delete, title="Delete chapter", order=1)
+        lesson = Lesson.objects.create(
+            chapter=chapter,
+            title="Delete video lesson",
+            order=1,
+            duration_seconds=60,
+            video=SimpleUploadedFile("delete-video.mp4", b"video-bytes", content_type="video/mp4"),
+        )
+        cover_name = course_to_delete.cover.name
+        video_name = lesson.video.name
+        self.assertTrue(default_storage.exists(cover_name))
+        self.assertTrue(default_storage.exists(video_name))
+        self.client.force_login(self.teacher)
+
+        response = self.client.post(reverse("courses:teacher-course-delete", args=[course_to_delete.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Course.objects.filter(pk=course_to_delete.pk).exists())
+        self.assertFalse(default_storage.exists(cover_name))
+        self.assertFalse(default_storage.exists(video_name))
+
+    @override_settings(MEDIA_ROOT=tempfile.gettempdir())
+    def test_teacher_delete_lesson_removes_video_file(self):
+        chapter = Chapter.objects.create(course=self.course, title="Video cleanup chapter", order=99)
+        lesson = Lesson.objects.create(
+            chapter=chapter,
+            title="Video cleanup lesson",
+            order=1,
+            duration_seconds=60,
+            video=SimpleUploadedFile("cleanup-video.mp4", b"video-bytes", content_type="video/mp4"),
+        )
+        video_name = lesson.video.name
+        self.assertTrue(default_storage.exists(video_name))
+        self.client.force_login(self.teacher)
+
+        response = self.client.post(reverse("courses:lesson-delete", args=[lesson.id]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Lesson.objects.filter(pk=lesson.pk).exists())
+        self.assertFalse(default_storage.exists(video_name))
 
     def test_teacher_can_view_student_progress_sorted(self):
         self.course.cover = SimpleUploadedFile("cover.png", b"fake-image-content", content_type="image/png")
